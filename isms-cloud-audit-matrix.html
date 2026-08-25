@@ -1,0 +1,1113 @@
+<title>클라우드 ISMS 점검 매트릭스</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --surface: #ffffff;
+    --surface-2: #eef1f5;
+    --border: #dbe1e9;
+    --text: #1a2230;
+    --text-muted: #5b6572;
+    --text-faint: #8b95a3;
+    --accent: #146c6b;
+    --accent-strong: #0d4f4e;
+    --accent-soft: #dff0ef;
+    --aws: #a15a20;
+    --aws-soft: #f6ead9;
+    --azure: #2b5f96;
+    --azure-soft: #dfeaf7;
+    --danger: #a63a30;
+    --danger-soft: #f7e5e3;
+    --good: #326a41;
+    --good-soft: #e3f0e6;
+    --code-bg: #0e1420;
+    --code-text: #d9e2f1;
+    --code-border: #24304a;
+    --shadow: 0 1px 2px rgba(20,30,45,.04), 0 8px 24px -12px rgba(20,30,45,.12);
+    --radius: 10px;
+    --radius-sm: 5px;
+    --font-kr: "Noto Sans KR", "Malgun Gothic", -apple-system, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0c121c;
+      --surface: #121a26;
+      --surface-2: #182233;
+      --border: #263349;
+      --text: #e5eaf2;
+      --text-muted: #9aa7b9;
+      --text-faint: #67748a;
+      --accent: #4bb6ac;
+      --accent-strong: #7cd3c9;
+      --accent-soft: rgba(75,182,172,.14);
+      --aws: #dda05e;
+      --aws-soft: rgba(221,160,94,.14);
+      --azure: #7bacdd;
+      --azure-soft: rgba(123,172,221,.14);
+      --danger: #e28d84;
+      --danger-soft: rgba(226,141,132,.14);
+      --good: #86c896;
+      --good-soft: rgba(134,200,150,.14);
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 28px -14px rgba(0,0,0,.55);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0c121c;
+    --surface: #121a26;
+    --surface-2: #182233;
+    --border: #263349;
+    --text: #e5eaf2;
+    --text-muted: #9aa7b9;
+    --text-faint: #67748a;
+    --accent: #4bb6ac;
+    --accent-strong: #7cd3c9;
+    --accent-soft: rgba(75,182,172,.14);
+    --aws: #dda05e;
+    --aws-soft: rgba(221,160,94,.14);
+    --azure: #7bacdd;
+    --azure-soft: rgba(123,172,221,.14);
+    --danger: #e28d84;
+    --danger-soft: rgba(226,141,132,.14);
+    --good: #86c896;
+    --good-soft: rgba(134,200,150,.14);
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 28px -14px rgba(0,0,0,.55);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-kr);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection { background: var(--accent-soft); color: var(--text); }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px 80px; }
+
+  /* ---------- Header ---------- */
+  header.top {
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, var(--surface-2), var(--bg));
+  }
+  .top-inner { max-width: 1180px; margin: 0 auto; padding: 40px 20px 26px; }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent-strong);
+    font-weight: 600;
+  }
+  h1 {
+    margin: 10px 0 12px;
+    font-size: clamp(26px, 3.6vw, 36px);
+    font-weight: 900;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+  }
+  .lede {
+    max-width: 68ch;
+    color: var(--text-muted);
+    font-size: 15px;
+    margin: 0 0 22px;
+  }
+  .stats { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px; }
+  .stat {
+    display: flex; align-items: baseline; gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 7px 14px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .stat b {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- Toolbar ---------- */
+  .toolbar {
+    position: sticky; top: 0; z-index: 20;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow);
+  }
+  .toolbar-inner {
+    max-width: 1180px; margin: 0 auto; padding: 12px 20px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  }
+  .search-box {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    flex: 1 1 220px;
+    min-width: 180px;
+  }
+  .search-box svg { flex: none; color: var(--text-faint); }
+  .search-box input {
+    border: 0; background: transparent; outline: none;
+    color: var(--text); font-family: var(--font-kr); font-size: 13.5px;
+    width: 100%;
+  }
+  .search-box input::placeholder { color: var(--text-faint); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-faint);
+    border-radius: 999px;
+    padding: 5px 11px;
+    cursor: pointer;
+    user-select: none;
+    transition: background .12s ease, color .12s ease, border-color .12s ease;
+  }
+  .chip.active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent-strong);
+  }
+  .chip:hover { border-color: var(--accent); }
+  .spacer { flex: 1 1 auto; }
+  .btn {
+    font-family: var(--font-kr);
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+    padding: 8px 14px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    white-space: nowrap;
+    transition: background .12s ease, border-color .12s ease, color .12s ease;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .btn.primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
+  .btn.primary:disabled {
+    background: var(--surface-2); border-color: var(--border); color: var(--text-faint); cursor: not-allowed;
+  }
+  .btn.danger { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); }
+  .export-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .export-status { font-size: 11.5px; color: var(--text-faint); min-height: 14px; }
+
+  .note-bar {
+    max-width: 1180px; margin: 14px auto 0; padding: 0 20px;
+    font-size: 12.5px; color: var(--text-faint);
+  }
+
+  /* ---------- Domain sections ---------- */
+  .domain { margin-top: 40px; }
+  .domain-head {
+    display: flex; align-items: baseline; gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border);
+  }
+  .domain-id {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--accent-strong);
+    background: var(--accent-soft);
+    border-radius: var(--radius-sm);
+    padding: 3px 9px;
+  }
+  .domain-head h2 { margin: 0; font-size: 19px; font-weight: 700; }
+  .domain-count { margin-left: auto; font-size: 12px; color: var(--text-faint); font-family: var(--font-mono); }
+
+  .cards { display: flex; flex-direction: column; gap: 16px; }
+
+  /* ---------- Card ---------- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    min-width: 0;
+  }
+  .card-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 16px 18px 0;
+  }
+  .badge {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 2px 8px;
+    font-variant-numeric: tabular-nums;
+  }
+  .card-head h3 { margin: 0; font-size: 16.5px; font-weight: 700; }
+  .card-desc {
+    margin: 8px 18px 16px;
+    color: var(--text-muted);
+    font-size: 13.5px;
+    padding-bottom: 14px;
+    border-bottom: 1px dashed var(--border);
+  }
+  [contenteditable="true"] { outline: none; border-radius: 4px; }
+  [contenteditable="true"]:hover { background: var(--surface-2); }
+  [contenteditable="true"]:focus { background: var(--accent-soft); box-shadow: 0 0 0 2px var(--accent) inset; }
+
+  .providers { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 0; }
+  .provider { padding: 0 18px 18px; min-width: 0; }
+  .provider.aws { border-right: 1px solid var(--border); }
+  .provider-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .tag {
+    font-family: var(--font-mono);
+    font-size: 11px; font-weight: 600; letter-spacing: .04em;
+    border-radius: 999px; padding: 3px 10px;
+  }
+  .tag-aws { background: var(--aws-soft); color: var(--aws); }
+  .tag-azure { background: var(--azure-soft); color: var(--azure); }
+
+  .field { margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+  .field-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--text-faint);
+    margin-bottom: 5px;
+  }
+  .code-shell { position: relative; }
+  .code {
+    font-family: var(--font-mono);
+    font-size: 12.3px;
+    line-height: 1.6;
+    background: var(--code-bg);
+    color: var(--code-text);
+    border: 1px solid var(--code-border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .code[contenteditable="true"]:hover { background: #141d30; }
+  .code[contenteditable="true"]:focus { background: #141d30; box-shadow: 0 0 0 2px var(--accent) inset; }
+  .copy-btn {
+    position: absolute; top: 6px; right: 6px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--text-faint);
+    background: rgba(255,255,255,.06);
+    border: 1px solid var(--code-border);
+    border-radius: 4px;
+    padding: 3px 7px;
+    cursor: pointer;
+  }
+  .copy-btn:hover { color: #fff; border-color: var(--accent); }
+
+  .field-text {
+    font-size: 13.3px;
+    color: var(--text);
+    line-height: 1.6;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+  }
+  .field-crit .field-text { border-left: 3px solid var(--danger); background: var(--danger-soft); }
+  .field-fix .field-text { border-left: 3px solid var(--good); background: var(--good-soft); }
+
+  footer {
+    max-width: 1180px; margin: 60px auto 0; padding: 20px 20px 0;
+    border-top: 1px solid var(--border);
+    color: var(--text-faint);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  @media (max-width: 720px) {
+    .providers { grid-template-columns: 1fr; }
+    .provider.aws { border-right: none; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+    .provider.azure { padding-top: 14px; }
+    .toolbar-inner { flex-direction: column; align-items: stretch; }
+    .export-wrap { align-items: stretch; }
+  }
+</style>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="eyebrow">ISMS-P · Cloud Infrastructure Audit</div>
+    <h1>클라우드 ISMS 점검 매트릭스</h1>
+    <p class="lede">AWS·Azure 환경에서 ISMS(-P) 인증심사를 준비할 때 점검해야 할 인증기준 항목을 CLI 명령어, 문제 판단 기준, 개선 방안 순으로 정리했습니다. 카드 안의 모든 텍스트는 직접 수정할 수 있고, 하단 버튼으로 CSV(Excel용) 파일로 내려받을 수 있습니다.</p>
+    <div class="stats">
+      <span class="stat"><b>17</b>개 통제항목</span>
+      <span class="stat"><b>7</b>개 인증기준 영역</span>
+      <span class="stat">AWS <b>↔</b> Azure 명령어 비교</span>
+    </div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <div class="search-box">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="search" type="text" placeholder="통제항목, 명령어, 키워드 검색…" />
+    </div>
+    <div class="chips" id="chips">
+      <span class="chip active" data-domain="2.5">2.5 인증·권한</span>
+      <span class="chip active" data-domain="2.6">2.6 접근통제</span>
+      <span class="chip active" data-domain="2.7">2.7 암호화</span>
+      <span class="chip active" data-domain="2.9">2.9 운영관리</span>
+      <span class="chip active" data-domain="2.10">2.10 보안관리</span>
+      <span class="chip active" data-domain="2.11">2.11 사고대응</span>
+      <span class="chip active" data-domain="2.12">2.12 재해복구</span>
+    </div>
+    <button class="btn" id="showAllBtn" type="button">전체 보기</button>
+    <div class="spacer"></div>
+    <button class="btn" id="resetBtn" type="button">편집 초기화</button>
+    <div class="export-wrap">
+      <button class="btn primary" id="exportBtn" type="button" disabled>다운로드 준비 중…</button>
+      <span class="export-status" id="exportStatus"></span>
+    </div>
+  </div>
+</div>
+<div class="note-bar">카드 내용은 이 브라우저에만 자동 저장됩니다(다른 사람과 공유되지 않음). 다운로드는 검색·필터 상태와 무관하게 전체 17개 항목을 내려받습니다.</div>
+
+<div class="wrap">
+
+  <!-- 2.5 인증 및 권한관리 -->
+  <section class="domain" data-domain-id="2.5" data-domain-name="인증 및 권한관리">
+    <div class="domain-head">
+      <span class="domain-id">2.5</span>
+      <h2>인증 및 권한관리</h2>
+      <span class="domain-count">5개 항목</span>
+    </div>
+    <div class="cards">
+
+      <article class="card" data-id="2.5.1">
+        <div class="card-head"><span class="badge">2.5.1</span><h3>사용자 계정 관리</h3></div>
+        <div class="card-desc" data-key="2.5.1-desc" contenteditable="true">사용자 등록·해지 및 권한부여 절차의 적정성과 미사용(휴면) 계정의 존재 여부를 점검한다.</div>
+        <div class="providers">
+          <section class="provider aws">
+            <div class="provider-head"><span class="tag tag-aws">AWS</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.5.1-aws-cmd" contenteditable="true">aws iam generate-credential-report
+aws iam get-credential-report --query 'Content' --output text | base64 --decode
+aws iam list-users --query 'Users[*].[UserName,PasswordLastUsed]' --output table</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.5.1-aws-crit" contenteditable="true">credential report의 password_last_used·access_key_last_used가 90일 이상이거나, 퇴사·전보자 계정이 Active 상태로 남아있음</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.5.1-aws-fix" contenteditable="true">90일 이상 미사용 IAM 사용자 비활성화·삭제, IAM Identity Center(SSO)로 개별 계정 최소화, 계정 발급·회수를 승인 이력이 남는 절차로 문서화</div></div>
+          </section>
+          <section class="provider azure">
+            <div class="provider-head"><span class="tag tag-azure">Azure</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.5.1-azure-cmd" contenteditable="true">az ad user list --query "[].{name:displayName,upn:userPrincipalName}"
+az role assignment list --all --query "[].{principal:principalName,role:roleDefinitionName}" -o table</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.5.1-azure-crit" contenteditable="true">Entra ID 로그인 활동 기록(signInActivity) 상 90일 이상 미로그인 계정에 Owner·Contributor 등 역할이 남아있음, 퇴사자 계정 미삭제</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.5.1-azure-fix" contenteditable="true">Entra ID Access Reviews(PIM)로 정기 계정·권한 검토 자동화, 미사용 계정 비활성화, HR 연동 SCIM 자동 프로비저닝·디프로비저닝 적용</div></div>
+          </section>
+        </div>
+      </article>
+
+      <article class="card" data-id="2.5.3">
+        <div class="card-head"><span class="badge">2.5.3</span><h3>사용자 인증</h3></div>
+        <div class="card-desc" data-key="2.5.3-desc" contenteditable="true">로그인 시 사용자를 안전하게 인증하는 절차(다중인증 등)가 적용되고 있는지 점검한다.</div>
+        <div class="providers">
+          <section class="provider aws">
+            <div class="provider-head"><span class="tag tag-aws">AWS</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.5.3-aws-cmd" contenteditable="true">aws iam get-account-summary --query 'SummaryMap.AccountMFAEnabled'
+aws iam list-virtual-mfa-devices
+aws iam get-credential-report --query 'Content' --output text | base64 --decode</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.5.3-aws-crit" contenteditable="true">root 계정 AccountMFAEnabled 값이 0(미설정), 콘솔 접근 권한이 있는 IAM 사용자 중 credential report의 mfa_active가 false인 사용자가 다수 존재</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.5.3-aws-fix" contenteditable="true">root 계정 하드웨어·가상 MFA 필수 등록 후 평상시 미사용, IAM 정책 조건(aws:MultiFactorAuthPresent)으로 콘솔·API 접근 시 MFA 강제, IAM Identity Center 전환 시 SSO+MFA 일원화</div></div>
+          </section>
+          <section class="provider azure">
+            <div class="provider-head"><span class="tag tag-azure">Azure</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.5.3-azure-cmd" contenteditable="true">az rest --method get --url "https://graph.microsoft.com/v1.0/reports/authenticationMethods/userRegistrationDetails"
+az rest --method get --url "https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies"</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.5.3-azure-crit" contenteditable="true">전역 관리자 등 특권 역할 계정 중 MFA 미등록자 존재, MFA를 강제하는 Conditional Access 정책이 없거나 Disabled 상태</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.5.3-azure-fix" contenteditable="true">Conditional Access로 전 사용자·관리자 MFA 강제 또는 Security Defaults 활성화, 특권 역할은 PIM 승격 시 MFA 재인증 필수화</div></div>
+          </section>
+        </div>
+      </article>
+
+      <article class="card" data-id="2.5.4">
+        <div class="card-head"><span class="badge">2.5.4</span><h3>비밀번호 관리</h3></div>
+        <div class="card-desc" data-key="2.5.4-desc" contenteditable="true">비밀번호의 생성·저장·변경 기준이 조직의 비밀번호 정책에 부합하는지 점검한다.</div>
+        <div class="providers">
+          <section class="provider aws">
+            <div class="provider-head"><span class="tag tag-aws">AWS</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.5.4-aws-cmd" contenteditable="true">aws iam get-account-password-policy</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.5.4-aws-crit" contenteditable="true">정책 자체가 없음(NoSuchEntity 오류) 또는 MinimumPasswordLength가 8 미만, RequireSymbols·RequireNumbers가 false, PasswordReusePrevention 미설정</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.5.4-aws-fix" contenteditable="true">계정 비밀번호 정책을 조직 기준(예: 최소 10자 이상, 복합문자, 재사용 방지 12회, 90일 만료)으로 설정하고 정기 점검</div></div>
+          </section>
+          <section class="provider azure">
+            <div class="provider-head"><span class="tag tag-azure">Azure</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.5.4-azure-cmd" contenteditable="true">az rest --method get --url "https://graph.microsoft.com/v1.0/policies/authenticationMethodsPolicy"</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.5.4-azure-crit" contenteditable="true">Entra ID 기본 정책(8자 이상) 외 조직이 요구하는 Smart Lockout 임계값·금지어 목록 등 강화 설정이 미적용, 하이브리드 환경에서 온프레미스 AD 정책과 불일치</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.5.4-azure-fix" contenteditable="true">Smart Lockout 임계값 강화, Azure AD Password Protection(맞춤 금지어 목록) 활성화, 하이브리드 환경은 온프레미스 AD 정책과 정합성 점검</div></div>
+          </section>
+        </div>
+      </article>
+
+      <article class="card" data-id="2.5.5">
+        <div class="card-head"><span class="badge">2.5.5</span><h3>특수 계정 및 권한 관리</h3></div>
+        <div class="card-desc" data-key="2.5.5-desc" contenteditable="true">root·전역관리자 등 특수 계정과 과다 권한 부여 현황을 식별하고 최소권한 원칙 준수 여부를 점검한다.</div>
+        <div class="providers">
+          <section class="provider aws">
+            <div class="provider-head"><span class="tag tag-aws">AWS</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.5.5-aws-cmd" contenteditable="true">aws cloudtrail lookup-events --lookup-attributes AttributeKey=Username,AttributeValue=root
+aws iam list-attached-user-policies --user-name USER_NAME
+aws iam list-policies --scope Local --only-attached --query "Policies[*].PolicyName"</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.5.5-aws-crit" contenteditable="true">root 계정으로 일상 업무(콘솔 로그인·API 호출) 이력 존재, 다수 사용자에게 AdministratorAccess 등 광범위한 권한이 그대로 부여됨</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.5.5-aws-fix" contenteditable="true">root는 최초 설정·비상시에만 사용하도록 절차화, 일상 관리 업무는 Assume Role 기반 IAM Role로 전환, 업무별 최소권한 Customer Managed Policy로 세분화</div></div>
+          </section>
+          <section class="provider azure">
+            <div class="provider-head"><span class="tag tag-azure">Azure</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.5.5-azure-cmd" contenteditable="true">az role assignment list --role "Owner" --all -o table
+az rest --method get --url "https://graph.microsoft.com/v1.0/directoryRoles"</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.5.5-azure-crit" contenteditable="true">구독 Owner 역할이 다수 사용자·그룹에 광범위 부여, 전역 관리자(Global Administrator) 인원이 권고 범위(2~4명)를 초과하고 상시 활성 상태로 유지됨</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.5.5-azure-fix" contenteditable="true">Reader·Contributor 등 세분화된 RBAC 역할과 사용자 지정 역할로 전환, 전역 관리자는 최소 인원만 유지하고 PIM으로 필요시(Just-In-Time) 승격 방식 적용</div></div>
+          </section>
+        </div>
+      </article>
+
+      <article class="card" data-id="2.5.6">
+        <div class="card-head"><span class="badge">2.5.6</span><h3>접근권한 검토</h3></div>
+        <div class="card-desc" data-key="2.5.6-desc" contenteditable="true">사용자 접근권한 및 자격증명(액세스 키 등)이 정기적으로 검토·회수되는지 점검한다.</div>
+        <div class="providers">
+          <section class="provider aws">
+            <div class="provider-head"><span class="tag tag-aws">AWS</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.5.6-aws-cmd" contenteditable="true">aws iam get-credential-report --query 'Content' --output text | base64 --decode
+aws iam list-access-keys --user-name USER_NAME
+aws accessanalyzer list-findings</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.5.6-aws-crit" contenteditable="true">액세스 키 생성 후 90일 이상 미교체, 사용하지 않는 액세스 키가 활성 상태로 존재, Access Analyzer가 외부 계정·퍼블릭 공유 리소스를 탐지</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.5.6-aws-fix" contenteditable="true">액세스 키 90일 주기 교체 및 미사용 키 즉시 삭제, IAM Access Analyzer 상시 활성화, 분기별 권한 검토(Access Review) 절차 수립</div></div>
+          </section>
+          <section class="provider azure">
+            <div class="provider-head"><span class="tag tag-azure">Azure</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.5.6-azure-cmd" contenteditable="true">az ad sp credential list --id SP_OBJECT_ID --query "[].{keyId:keyId,endDate:endDateTime}"
+az role assignment list --all -o table</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.5.6-azure-crit" contenteditable="true">서비스 프린시펄 시크릿 만료일이 1년 이상으로 설정되거나 이미 만료된 자격증명이 남아있음, 정기 Access Review가 구성되어 있지 않음</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.5.6-azure-fix" contenteditable="true">서비스 프린시펄은 관리 ID(Managed Identity) 또는 인증서로 전환, 부득이 시크릿 사용 시 수명을 180일 이하로 단축, Entra ID Access Reviews를 분기 단위로 자동화</div></div>
+          </section>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- 2.6 접근통제 -->
+  <section class="domain" data-domain-id="2.6" data-domain-name="접근통제">
+    <div class="domain-head">
+      <span class="domain-id">2.6</span>
+      <h2>접근통제</h2>
+      <span class="domain-count">3개 항목</span>
+    </div>
+    <div class="cards">
+
+      <article class="card" data-id="2.6.1">
+        <div class="card-head"><span class="badge">2.6.1</span><h3>네트워크 접근</h3></div>
+        <div class="card-desc" data-key="2.6.1-desc" contenteditable="true">네트워크 대역별 접근통제(보안그룹·NSG 등)가 최소 허용 원칙으로 구성되어 있는지 점검한다.</div>
+        <div class="providers">
+          <section class="provider aws">
+            <div class="provider-head"><span class="tag tag-aws">AWS</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.6.1-aws-cmd" contenteditable="true">aws ec2 describe-security-groups --query "SecurityGroups[?IpPermissions[?IpRanges[?CidrIp=='0.0.0.0/0']]].[GroupId,GroupName]"</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.6.1-aws-crit" contenteditable="true">0.0.0.0/0(Any)로부터 전체 포트 또는 관리 포트(22, 3389, 3306, 5432 등)가 인바운드로 열려 있음</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.6.1-aws-fix" contenteditable="true">보안그룹 인바운드를 업무상 필요한 출발지 IP·대역으로 제한, 관리 포트는 사내 VPN·Bastion 대역만 허용, AWS Config 규칙(restricted-ssh 등)으로 상시 탐지</div></div>
+          </section>
+          <section class="provider azure">
+            <div class="provider-head"><span class="tag tag-azure">Azure</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.6.1-azure-cmd" contenteditable="true">az network nsg list -o table
+az network nsg rule list --nsg-name NSG_NAME -g RESOURCE_GROUP --query "[?sourceAddressPrefix=='*']"</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.6.1-azure-crit" contenteditable="true">NSG 규칙의 Source가 Any(*)로 설정되어 인터넷 전체로부터 인바운드가 허용됨, 특히 22·3389 포트가 전면 개방</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.6.1-azure-fix" contenteditable="true">NSG Source를 특정 IP·서비스 태그로 제한, Azure Bastion 또는 Just-In-Time VM Access(Defender for Cloud) 적용, Azure Policy로 Any 허용 규칙 탐지·차단</div></div>
+          </section>
+        </div>
+      </article>
+
+      <article class="card" data-id="2.6.6">
+        <div class="card-head"><span class="badge">2.6.6</span><h3>원격접근 통제</h3></div>
+        <div class="card-desc" data-key="2.6.6-desc" contenteditable="true">원격 운영 접속 경로가 안전하게 통제(전용회선, Bastion 등)되고 있는지 점검한다.</div>
+        <div class="providers">
+          <section class="provider aws">
+            <div class="provider-head"><span class="tag tag-aws">AWS</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.6.6-aws-cmd" contenteditable="true">aws ec2 describe-instances --query "Reservations[].Instances[?PublicIpAddress!=null].[InstanceId,PublicIpAddress]"</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.6.6-aws-crit" contenteditable="true">퍼블릭 IP가 부여된 인스턴스에 22·3389 인바운드가 함께 열려 있어(2.6.1 결과와 교차 확인) Bastion·VPN을 거치지 않고 직접 접속 가능</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.6.6-aws-fix" contenteditable="true">Bastion Host 또는 Systems Manager Session Manager로 원격 접속을 일원화, 불필요한 퍼블릭 IP 회수, Session Manager 접속기록은 CloudWatch Logs로 연동</div></div>
+          </section>
+          <section class="provider azure">
+            <div class="provider-head"><span class="tag tag-azure">Azure</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.6.6-azure-cmd" contenteditable="true">az vm list-ip-addresses -o table
+az network bastion list -o table</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.6.6-azure-crit" contenteditable="true">VM에 퍼블릭 IP가 직결되어 있고 RDP·SSH가 열려 있으며, Bastion·Azure AD 로그인 없이 접속이 가능한 구조</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.6.6-azure-fix" contenteditable="true">Azure Bastion 또는 Just-In-Time VM Access로 전환, 불필요한 퍼블릭 IP 제거, Azure AD 기반 VM 로그인(Login with Azure AD) 적용</div></div>
+          </section>
+        </div>
+      </article>
+
+      <article class="card" data-id="2.6.7">
+        <div class="card-head"><span class="badge">2.6.7</span><h3>인터넷 접속 통제</h3></div>
+        <div class="card-desc" data-key="2.6.7-desc" contenteditable="true">내부 정보시스템의 인터넷 접속(아웃바운드)이 업무 목적에 맞게 통제되는지 점검한다.</div>
+        <div class="providers">
+          <section class="provider aws">
+            <div class="provider-head"><span class="tag tag-aws">AWS</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.6.7-aws-cmd" contenteditable="true">aws ec2 describe-route-tables --query "RouteTables[].Routes[?GatewayId!=null]"
+aws ec2 describe-nat-gateways --query "NatGateways[*].[NatGatewayId,State]"</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.6.7-aws-crit" contenteditable="true">DB 등 민감 서브넷이 인터넷 게이트웨이(IGW)로 직접 라우팅되어 있음, 보안그룹 아웃바운드가 0.0.0.0/0 전면 허용 상태</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.6.7-aws-fix" contenteditable="true">민감 자원은 Private Subnet + NAT Gateway 구조로 전환, 아웃바운드도 필요한 목적지·포트로 제한, VPC Endpoint로 AWS 서비스 접근 시 인터넷 경유 최소화</div></div>
+          </section>
+          <section class="provider azure">
+            <div class="provider-head"><span class="tag tag-azure">Azure</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.6.7-azure-cmd" contenteditable="true">az network route-table list -o table
+az network nsg rule list --nsg-name NSG_NAME -g RESOURCE_GROUP --query "[?direction=='Outbound']"</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.6.7-azure-crit" contenteditable="true">사용자 정의 경로(UDR)가 없어 전체 아웃바운드가 인터넷으로 직접 나감, NSG 아웃바운드 규칙이 Any로 허용됨</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.6.7-azure-fix" contenteditable="true">Azure Firewall·NVA로 아웃바운드를 강제 라우팅(UDR), Private Endpoint로 PaaS 접근 시 인터넷 우회, NSG 아웃바운드 규칙 최소화</div></div>
+          </section>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- 2.7 암호화 적용 -->
+  <section class="domain" data-domain-id="2.7" data-domain-name="암호화 적용">
+    <div class="domain-head">
+      <span class="domain-id">2.7</span>
+      <h2>암호화 적용</h2>
+      <span class="domain-count">2개 항목</span>
+    </div>
+    <div class="cards">
+
+      <article class="card" data-id="2.7.1">
+        <div class="card-head"><span class="badge">2.7.1</span><h3>암호정책 적용</h3></div>
+        <div class="card-desc" data-key="2.7.1-desc" contenteditable="true">개인정보 및 중요정보의 저장·전송 구간에 적절한 암호화가 적용되는지 점검한다.</div>
+        <div class="providers">
+          <section class="provider aws">
+            <div class="provider-head"><span class="tag tag-aws">AWS</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.7.1-aws-cmd" contenteditable="true">aws ec2 describe-volumes --query 'Volumes[?Encrypted==`false`].VolumeId'
+aws s3api get-bucket-encryption --bucket BUCKET_NAME
+aws rds describe-db-instances --query 'DBInstances[?StorageEncrypted==`false`].DBInstanceIdentifier'</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.7.1-aws-crit" contenteditable="true">EBS 볼륨·RDS·S3 버킷 중 암호화가 적용되지 않은 자원이 존재(특히 개인정보·중요정보 저장소), get-bucket-encryption 조회 시 NoSuchEncryption 오류 반환</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.7.1-aws-fix" contenteditable="true">계정 단위 EBS 기본 암호화 활성화, S3 기본 암호화(SSE-S3·SSE-KMS)를 강제하고 버킷 정책으로 미암호화 업로드 거부, RDS는 스냅샷 복사 후 암호화 옵션으로 재생성</div></div>
+          </section>
+          <section class="provider azure">
+            <div class="provider-head"><span class="tag tag-azure">Azure</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.7.1-azure-cmd" contenteditable="true">az disk list --query "[?encryption.type=='EncryptionAtRestWithPlatformKey']" -o table
+az storage account show -n STORAGE_ACCOUNT --query "encryption"
+az sql db tde show -g RESOURCE_GROUP -s SQL_SERVER -n DB_NAME</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.7.1-azure-crit" contenteditable="true">SQL Database의 TDE(투명한 데이터 암호화)가 Disabled 상태, 규제상 고객관리키(CMK)가 요구되는 자원에 플랫폼 기본 키만 적용되어 있음</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.7.1-azure-fix" contenteditable="true">비활성화된 DB의 TDE 즉시 재활성화, 규제상 요구되는 자원은 Key Vault 연동 Customer-Managed Key로 전환, Storage Service Encryption 적용 여부 상시 확인</div></div>
+          </section>
+        </div>
+      </article>
+
+      <article class="card" data-id="2.7.2">
+        <div class="card-head"><span class="badge">2.7.2</span><h3>암호키 관리</h3></div>
+        <div class="card-desc" data-key="2.7.2-desc" contenteditable="true">암호화에 사용되는 키의 생성·저장·배포·파기 및 로테이션 관리가 안전하게 이루어지는지 점검한다.</div>
+        <div class="providers">
+          <section class="provider aws">
+            <div class="provider-head"><span class="tag tag-aws">AWS</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.7.2-aws-cmd" contenteditable="true">aws kms list-keys
+aws kms get-key-rotation-status --key-id KEY_ID
+aws kms get-key-policy --key-id KEY_ID --policy-name default</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.7.2-aws-crit" contenteditable="true">고객관리형 키(CMK)의 자동 로테이션이 비활성화, 키 정책의 Principal이 과도하게 넓게(예: 계정 전체 또는 *) 허용되어 있음</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.7.2-aws-fix" contenteditable="true">KMS 키 자동 로테이션(연 1회) 활성화, 키 정책을 특정 Role·서비스로 최소권한화, CloudTrail 데이터 이벤트로 키 사용 이력 감사</div></div>
+          </section>
+          <section class="provider azure">
+            <div class="provider-head"><span class="tag tag-azure">Azure</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.7.2-azure-cmd" contenteditable="true">az keyvault list -o table
+az keyvault key list --vault-name KEYVAULT_NAME
+az keyvault show --name KEYVAULT_NAME --query "properties.{purgeProtection:enablePurgeProtection,softDelete:enableSoftDelete}"</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.7.2-azure-crit" contenteditable="true">Key Vault의 Soft-delete·Purge Protection이 비활성화되어 키가 영구 삭제될 위험, 키에 만료일(expiry)이 설정되지 않아 무기한 사용됨</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.7.2-azure-fix" contenteditable="true">Soft-delete·Purge Protection 필수 활성화, 키에 만료일 및 자동 로테이션 정책 설정, RBAC·액세스 정책으로 최소권한 부여</div></div>
+          </section>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- 2.9 시스템 및 서비스 운영관리 -->
+  <section class="domain" data-domain-id="2.9" data-domain-name="시스템 및 서비스 운영관리">
+    <div class="domain-head">
+      <span class="domain-id">2.9</span>
+      <h2>시스템 및 서비스 운영관리</h2>
+      <span class="domain-count">2개 항목</span>
+    </div>
+    <div class="cards">
+
+      <article class="card" data-id="2.9.4">
+        <div class="card-head"><span class="badge">2.9.4</span><h3>로그 및 접속기록 관리</h3></div>
+        <div class="card-desc" data-key="2.9.4-desc" contenteditable="true">정보시스템의 이용·접속기록이 법적 요구사항에 맞게 생성·보존되는지 점검한다.</div>
+        <div class="providers">
+          <section class="provider aws">
+            <div class="provider-head"><span class="tag tag-aws">AWS</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.9.4-aws-cmd" contenteditable="true">aws cloudtrail describe-trails --query "trailList[*].[Name,IsMultiRegionTrail,IsOrganizationTrail]"
+aws cloudtrail get-trail-status --name TRAIL_NAME
+aws cloudtrail get-event-selectors --trail-name TRAIL_NAME</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.9.4-aws-crit" contenteditable="true">CloudTrail이 일부 리전에서 비활성화되어 있거나 IsMultiRegionTrail이 false, 로그 보관 기간이 법정 요구(접속기록 2년 이상 등)에 미달</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.9.4-aws-fix" contenteditable="true">전 리전 CloudTrail 활성화 및 Organizations 단위 통합 추적 구성, S3 로그 버킷에 수명주기 정책으로 법정 보관기간 이상 보존, CloudWatch Logs 연동으로 실시간 모니터링</div></div>
+          </section>
+          <section class="provider azure">
+            <div class="provider-head"><span class="tag tag-azure">Azure</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.9.4-azure-cmd" contenteditable="true">az monitor diagnostic-settings list --resource RESOURCE_ID
+az monitor log-analytics workspace list -o table
+az monitor activity-log list --start-time 2026-05-01</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.9.4-azure-crit" contenteditable="true">핵심 리소스(구독, 주요 VM·DB)에 진단 설정(Diagnostic Settings)이 구성되지 않아 로그가 수집되지 않음, Activity Log 보존기간이 기본값(90일)에 그쳐 법정 보관기간 미달</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.9.4-azure-fix" contenteditable="true">전 구독·핵심 리소스에 Diagnostic Settings를 Log Analytics·Storage Account로 연동, Storage 수명주기 정책으로 장기보관(2년 이상), Azure Policy(Deploy if not exists)로 진단설정 강제</div></div>
+          </section>
+        </div>
+      </article>
+
+      <article class="card" data-id="2.9.5">
+        <div class="card-head"><span class="badge">2.9.5</span><h3>로그 및 접속기록 점검</h3></div>
+        <div class="card-desc" data-key="2.9.5-desc" contenteditable="true">저장된 로그의 위·변조 방지 조치와 정기적인 점검·분석이 이루어지는지 점검한다.</div>
+        <div class="providers">
+          <section class="provider aws">
+            <div class="provider-head"><span class="tag tag-aws">AWS</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.9.5-aws-cmd" contenteditable="true">aws cloudtrail get-trail-status --name TRAIL_NAME --query "LogFileValidationEnabled"
+aws s3api get-bucket-policy --bucket LOG_BUCKET
+aws s3api get-public-access-block --bucket LOG_BUCKET</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.9.5-aws-crit" contenteditable="true">로그파일 무결성 검증(Log File Validation)이 비활성화, 로그 버킷이 일반 관리자에게 삭제·수정 권한을 부여하거나 퍼블릭 접근이 가능</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.9.5-aws-fix" contenteditable="true">Log File Validation 활성화(SHA-256 다이제스트 서명), 로그 버킷을 별도 계정으로 분리 후 Object Lock(WORM)·최소권한 정책 적용, 월 1회 이상 로그 검토·이상탐지 자동화(Athena 등)</div></div>
+          </section>
+          <section class="provider azure">
+            <div class="provider-head"><span class="tag tag-azure">Azure</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.9.5-azure-cmd" contenteditable="true">az storage account blob-service-properties show -n STORAGE_ACCOUNT --query "{immutability:immutableStorageWithVersioning,softDelete:deleteRetentionPolicy}"
+az role assignment list --scope WORKSPACE_ID -o table</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.9.5-azure-crit" contenteditable="true">로그 저장 Storage Account에 불변성(Immutable Blob Storage)이 설정되지 않아 변조·삭제가 가능, Log Analytics Workspace에 과다한 사용자가 편집 권한을 보유</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.9.5-azure-fix" contenteditable="true">Immutable Blob Storage(WORM) 정책 적용, Workspace RBAC를 Reader 중심으로 최소화, 관리자 로그인·권한변경 기준 쿼리로 정기 로그 점검 자동화(Sentinel·Workbook)</div></div>
+          </section>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- 2.10 시스템 및 서비스 보안관리 -->
+  <section class="domain" data-domain-id="2.10" data-domain-name="시스템 및 서비스 보안관리">
+    <div class="domain-head">
+      <span class="domain-id">2.10</span>
+      <h2>시스템 및 서비스 보안관리</h2>
+      <span class="domain-count">2개 항목</span>
+    </div>
+    <div class="cards">
+
+      <article class="card" data-id="2.10.2">
+        <div class="card-head"><span class="badge">2.10.2</span><h3>클라우드 보안</h3></div>
+        <div class="card-desc" data-key="2.10.2-desc" contenteditable="true">클라우드 서비스 이용에 따른 책임분계, 콘솔 접근통제, 설정변경 관리 등 클라우드 특화 보안통제를 점검한다.</div>
+        <div class="providers">
+          <section class="provider aws">
+            <div class="provider-head"><span class="tag tag-aws">AWS</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.10.2-aws-cmd" contenteditable="true">aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=ConsoleLogin
+aws organizations describe-organization
+aws securityhub get-findings --filters '{"ComplianceStatus":[{"Value":"FAILED","Comparison":"EQUALS"}]}'</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.10.2-aws-crit" contenteditable="true">콘솔 로그인 이벤트에 비정상 위치·시간대 접속 존재, Organizations SCP 등 계정 간 가드레일 미설정, Security Hub 컴플라이언스 FAILED 항목 다수</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.10.2-aws-fix" contenteditable="true">Organizations + SCP로 계정 단위 가드레일 설정, Security Hub·Config Conformance Pack으로 CIS AWS Foundations 벤치마크 상시 점검, 콘솔 로그인 이상탐지에 GuardDuty 연계</div></div>
+          </section>
+          <section class="provider azure">
+            <div class="provider-head"><span class="tag tag-azure">Azure</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.10.2-azure-cmd" contenteditable="true">az account management-group list -o table
+az policy assignment list -o table
+az security regulatory-compliance-standards list</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.10.2-azure-crit" contenteditable="true">관리 그룹·Azure Policy가 미적용되어 구독 간 보안기준이 불일치, Defender for Cloud 보안 점수(Secure Score)가 저조하거나 규제 준수 표준 항목이 미충족</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.10.2-azure-fix" contenteditable="true">관리 그룹 단위 Azure Policy(Deny·Audit)로 조직 전체 가드레일 구성, Defender for Cloud 상시 활성화 및 Secure Score 개선항목 조치, 구독 소유자 변경 등 주요 이벤트 알림(Action Group) 설정</div></div>
+          </section>
+        </div>
+      </article>
+
+      <article class="card" data-id="2.10.8">
+        <div class="card-head"><span class="badge">2.10.8</span><h3>패치관리</h3></div>
+        <div class="card-desc" data-key="2.10.8-desc" contenteditable="true">운영체제 및 소프트웨어의 보안 패치가 적시에 식별·적용되는지 점검한다.</div>
+        <div class="providers">
+          <section class="provider aws">
+            <div class="provider-head"><span class="tag tag-aws">AWS</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.10.8-aws-cmd" contenteditable="true">aws ssm describe-instance-information --query "InstanceInformationList[*].[InstanceId,PingStatus]"
+aws ssm list-compliance-items --resource-id INSTANCE_ID
+aws ssm describe-patch-group-state --patch-group PATCH_GROUP</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.10.8-aws-crit" contenteditable="true">Systems Manager 관리 대상에 등록되지 않은 인스턴스가 존재(패치 관리 사각지대), Patch Compliance 상태가 NON_COMPLIANT인 인스턴스가 다수</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.10.8-aws-fix" contenteditable="true">전 EC2에 SSM Agent 설치 및 Patch Manager 베이스라인·일정 적용, Maintenance Window로 정기 패치 자동화, Compliance 대시보드로 미준수 인스턴스 상시 추적</div></div>
+          </section>
+          <section class="provider azure">
+            <div class="provider-head"><span class="tag tag-azure">Azure</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.10.8-azure-cmd" contenteditable="true">az vm assess-patches -g RESOURCE_GROUP -n VM_NAME
+az automation software-update-configuration list --automation-account-name AUTOMATION_ACCOUNT -g RESOURCE_GROUP</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.10.8-azure-crit" contenteditable="true">Automatic VM Guest Patching이 미설정, Update Management(Azure Automation)에 등록되지 않은 VM이 존재, 평가 결과 Critical·Security 패치가 다수 미적용</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.10.8-azure-fix" contenteditable="true">Automatic Guest Patching 활성화 또는 Azure Update Manager로 일원화, Maintenance Configuration으로 정기 패치 일정 수립, 패치 준수율 대시보드로 상시 추적</div></div>
+          </section>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- 2.11 사고 예방 및 대응 -->
+  <section class="domain" data-domain-id="2.11" data-domain-name="사고 예방 및 대응">
+    <div class="domain-head">
+      <span class="domain-id">2.11</span>
+      <h2>사고 예방 및 대응</h2>
+      <span class="domain-count">2개 항목</span>
+    </div>
+    <div class="cards">
+
+      <article class="card" data-id="2.11.2">
+        <div class="card-head"><span class="badge">2.11.2</span><h3>취약점 점검 및 조치</h3></div>
+        <div class="card-desc" data-key="2.11.2-desc" contenteditable="true">정기적인 취약점 점검을 수행하고 발견된 취약점이 기준에 따라 조치되는지 점검한다.</div>
+        <div class="providers">
+          <section class="provider aws">
+            <div class="provider-head"><span class="tag tag-aws">AWS</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.11.2-aws-cmd" contenteditable="true">aws inspector2 batch-get-account-status
+aws inspector2 list-findings --filter-criteria '{"severity":[{"comparison":"EQUALS","value":"CRITICAL"}]}'</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.11.2-aws-crit" contenteditable="true">Inspector2가 일부 계정·리전에서 비활성화되어 있음, CRITICAL·HIGH 등급 취약점이 장기간 조치되지 않은 채 방치됨</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.11.2-aws-fix" contenteditable="true">전 계정·리전에 Inspector2 활성화(EC2·ECR·Lambda 스캔), 취약점 등급별 조치 SLA(예: Critical 7일 이내)를 수립하고 티켓 시스템과 연동, 정기 리포트로 경영진 보고</div></div>
+          </section>
+          <section class="provider azure">
+            <div class="provider-head"><span class="tag tag-azure">Azure</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.11.2-azure-cmd" contenteditable="true">az security assessment list --query "[?status.code=='Unhealthy']"
+az security sub-assessment list</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.11.2-azure-crit" contenteditable="true">Defender for Cloud 취약점 평가가 일부 리소스에 구성되지 않음, Unhealthy 평가 항목이 장기간 조치되지 않고 누적됨</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.11.2-azure-fix" contenteditable="true">Defender for Servers·Containers 등 플랜을 활성화해 취약점 스캔을 자동화, Unhealthy 항목을 SLA로 관리하고 Secure Score에 반영, 월 1회 이상 취약점 리포트 검토</div></div>
+          </section>
+        </div>
+      </article>
+
+      <article class="card" data-id="2.11.3">
+        <div class="card-head"><span class="badge">2.11.3</span><h3>이상행위 분석 및 모니터링</h3></div>
+        <div class="card-desc" data-key="2.11.3-desc" contenteditable="true">침해사고 징후를 탐지하기 위한 이상행위 분석·모니터링 체계가 구축·운영되는지 점검한다.</div>
+        <div class="providers">
+          <section class="provider aws">
+            <div class="provider-head"><span class="tag tag-aws">AWS</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.11.3-aws-cmd" contenteditable="true">aws guardduty list-detectors
+aws guardduty get-detector --detector-id DETECTOR_ID
+aws guardduty list-findings --detector-id DETECTOR_ID</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.11.3-aws-crit" contenteditable="true">GuardDuty가 비활성화되어 있음, 활성화된 경우에도 High·Critical Finding이 장기간 확인·대응되지 않고 누적됨</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.11.3-aws-fix" contenteditable="true">전 계정·리전에 GuardDuty 활성화(Organizations 위임 관리자로 중앙화), Finding을 EventBridge+SNS 또는 SOAR로 자동 알림·대응 연계, 위협 인텔리전스 룰셋 정기 갱신</div></div>
+          </section>
+          <section class="provider azure">
+            <div class="provider-head"><span class="tag tag-azure">Azure</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.11.3-azure-cmd" contenteditable="true">az security alert list --query "[?status=='Active']"
+az security auto-provisioning-setting list</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.11.3-azure-crit" contenteditable="true">Defender for Cloud Active Alert이 다수 미해결 상태로 누적됨, 자동 프로비저닝(모니터링 에이전트 배포)이 비활성화되어 일부 리소스가 모니터링 사각지대에 있음</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.11.3-azure-fix" contenteditable="true">Defender for Cloud 전체 플랜과 Auto-provisioning 활성화, Microsoft Sentinel 연동으로 상관분석·자동대응(Playbook) 구성, Active Alert 대응 SLA 수립</div></div>
+          </section>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- 2.12 재해복구 -->
+  <section class="domain" data-domain-id="2.12" data-domain-name="재해복구">
+    <div class="domain-head">
+      <span class="domain-id">2.12</span>
+      <h2>재해복구</h2>
+      <span class="domain-count">1개 항목</span>
+    </div>
+    <div class="cards">
+
+      <article class="card" data-id="2.12.1">
+        <div class="card-head"><span class="badge">2.12.1</span><h3>백업 및 재해복구</h3></div>
+        <div class="card-desc" data-key="2.12.1-desc" contenteditable="true">재해·재난 발생에 대비한 백업 및 이중화 조치가 마련되어 있는지 점검한다.</div>
+        <div class="providers">
+          <section class="provider aws">
+            <div class="provider-head"><span class="tag tag-aws">AWS</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.12.1-aws-cmd" contenteditable="true">aws backup list-backup-plans
+aws backup list-backup-jobs --by-state FAILED
+aws dlm get-lifecycle-policies</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.12.1-aws-crit" contenteditable="true">중요 자원(RDS·EBS·EFS)에 백업 계획(Backup Plan)이 연결되어 있지 않음, 최근 백업 Job이 FAILED 상태로 다수 존재, 백업 보관 리전이 운영 리전과 동일해 재해 시 동반 손실 위험</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.12.1-aws-fix" contenteditable="true">AWS Backup으로 전사 백업 정책을 RPO·RTO 기준에 맞게 표준화, Cross-Region Copy로 이중화, 정기 복구 테스트(Restore Test)를 수행하고 결과를 기록·보고</div></div>
+          </section>
+          <section class="provider azure">
+            <div class="provider-head"><span class="tag tag-azure">Azure</span></div>
+            <div class="field field-cmd"><span class="field-label">점검 명령어</span>
+              <div class="code-shell"><div class="code" data-key="2.12.1-azure-cmd" contenteditable="true">az backup policy list -g RESOURCE_GROUP --vault-name VAULT_NAME
+az backup item list -g RESOURCE_GROUP --vault-name VAULT_NAME --query "[?properties.lastBackupStatus=='Failed']"
+az backup vault list --query "[].properties.storageType"</div><button class="copy-btn" type="button">복사</button></div>
+            </div>
+            <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.12.1-azure-crit" contenteditable="true">Recovery Services Vault에 정책이 연결되지 않은 자원이 존재, lastBackupStatus가 Failed인 항목이 다수, StorageType이 LocallyRedundant(LRS)로 지역 재해 시 손실 위험</div></div>
+            <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.12.1-azure-fix" contenteditable="true">Recovery Services Vault를 GRS(Geo-Redundant)로 구성, 백업 실패 알림(Azure Monitor Alert) 설정, 연 1회 이상 DR 복구 모의훈련을 수행하고 결과 문서화</div></div>
+          </section>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <footer>
+    본 매트릭스는 ISMS-P(2022 개정 인증기준) 영역 2 "보호대책 요구사항" 중 클라우드 인프라 기술점검과 밀접한 17개 항목을 실무 참고용으로 재구성한 것으로, KISA의 공식 심사 자료를 대체하지 않습니다. 조직의 계정 구조·리전·CLI 버전·권한(aws configure, az login 필요)에 따라 명령어와 쿼리 문법을 조정해 사용하십시오. 마지막 업데이트: 2026-08-25.
+  </footer>
+</div>
+
+<script>
+(function () {
+  var STORAGE_PREFIX = 'ismsCloudMatrix:v1:';
+
+  // ---- restore edited fields from localStorage ----
+  var fields = document.querySelectorAll('[data-key]');
+  fields.forEach(function (el) {
+    var key = STORAGE_PREFIX + el.dataset.key;
+    try {
+      var saved = localStorage.getItem(key);
+      if (saved !== null) el.textContent = saved;
+    } catch (e) {}
+    var timer;
+    el.addEventListener('input', function () {
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        try { localStorage.setItem(key, el.textContent); } catch (e) {}
+      }, 400);
+    });
+  });
+
+  // ---- copy buttons ----
+  document.querySelectorAll('.copy-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var code = btn.previousElementSibling;
+      var text = code ? code.textContent : '';
+      var original = btn.textContent;
+      navigator.clipboard.writeText(text).then(function () {
+        btn.textContent = '복사됨';
+        setTimeout(function () { btn.textContent = original; }, 1200);
+      }).catch(function () {
+        btn.textContent = '복사 실패';
+        setTimeout(function () { btn.textContent = original; }, 1200);
+      });
+    });
+  });
+
+  // ---- search + domain filter ----
+  var searchInput = document.getElementById('search');
+  var chips = Array.prototype.slice.call(document.querySelectorAll('.chip'));
+  var domains = document.querySelectorAll('.domain');
+
+  function applyFilters() {
+    var q = (searchInput.value || '').trim().toLowerCase();
+    var activeDomains = {};
+    chips.forEach(function (c) {
+      if (c.classList.contains('active')) activeDomains[c.dataset.domain] = true;
+    });
+
+    domains.forEach(function (domainEl) {
+      var domainId = domainEl.dataset.domainId;
+      var domainOn = !!activeDomains[domainId];
+      var anyVisible = false;
+      domainEl.querySelectorAll('.card').forEach(function (card) {
+        var text = card.textContent.toLowerCase();
+        var match = domainOn && (q === '' || text.indexOf(q) !== -1);
+        card.style.display = match ? '' : 'none';
+        if (match) anyVisible = true;
+      });
+      domainEl.style.display = anyVisible ? '' : 'none';
+    });
+  }
+
+  searchInput.addEventListener('input', applyFilters);
+  chips.forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      chip.classList.toggle('active');
+      applyFilters();
+    });
+  });
+  document.getElementById('showAllBtn').addEventListener('click', function () {
+    searchInput.value = '';
+    chips.forEach(function (c) { c.classList.add('active'); });
+    applyFilters();
+  });
+
+  // ---- reset edits (two-step confirm) ----
+  var resetBtn = document.getElementById('resetBtn');
+  var resetArmed = false;
+  var resetTimer;
+  resetBtn.addEventListener('click', function () {
+    if (!resetArmed) {
+      resetArmed = true;
+      resetBtn.textContent = '다시 클릭하면 초기화됩니다';
+      resetBtn.classList.add('danger');
+      resetTimer = setTimeout(function () {
+        resetArmed = false;
+        resetBtn.textContent = '편집 초기화';
+        resetBtn.classList.remove('danger');
+      }, 3000);
+    } else {
+      clearTimeout(resetTimer);
+      try {
+        Object.keys(localStorage)
+          .filter(function (k) { return k.indexOf(STORAGE_PREFIX) === 0; })
+          .forEach(function (k) { localStorage.removeItem(k); });
+      } catch (e) {}
+      location.reload();
+    }
+  });
+
+  // ---- CSV (Excel) export via downloads capability ----
+  var exportBtn = document.getElementById('exportBtn');
+  var exportStatus = document.getElementById('exportStatus');
+  var downloadsNS = null;
+
+  function csvEscape(value) {
+    var v = (value || '').replace(/\s+/g, ' ').trim();
+    return '"' + v.replace(/"/g, '""') + '"';
+  }
+
+  function buildCSV() {
+    var header = ['영역ID','영역명','통제항목ID','통제항목명','설명',
+      'AWS_점검명령어','AWS_문제판단기준','AWS_개선방안',
+      'Azure_점검명령어','Azure_문제판단기준','Azure_개선방안'];
+    var rows = [header];
+
+    document.querySelectorAll('.domain').forEach(function (domainEl) {
+      var domainId = domainEl.dataset.domainId;
+      var domainName = domainEl.dataset.domainName;
+      domainEl.querySelectorAll('.card').forEach(function (card) {
+        var get = function (sel) {
+          var el = card.querySelector(sel);
+          return el ? el.textContent : '';
+        };
+        rows.push([
+          domainId,
+          domainName,
+          card.dataset.id,
+          get('.card-head h3'),
+          get('.card-desc'),
+          get('.provider.aws .field-cmd .code'),
+          get('.provider.aws .field-crit .field-text'),
+          get('.provider.aws .field-fix .field-text'),
+          get('.provider.azure .field-cmd .code'),
+          get('.provider.azure .field-crit .field-text'),
+          get('.provider.azure .field-fix .field-text')
+        ]);
+      });
+    });
+
+    return rows.map(function (r) { return r.map(csvEscape).join(','); }).join('\r\n');
+  }
+
+  var ERROR_MESSAGES = {
+    rejected_extension: '이 형식은 지원되지 않습니다.',
+    extension_not_enabled: 'CSV 다운로드가 이 화면에서 비활성화되어 있습니다.',
+    too_large: '파일 용량이 너무 큽니다.',
+    declined: '다운로드가 취소되었습니다.',
+    rate_limited: '잠시 후 다시 시도해 주세요.',
+    bad_request: '요청을 처리할 수 없습니다.',
+    unavailable: '이 화면에서는 다운로드를 사용할 수 없습니다.'
+  };
+
+  (async function initDownloads() {
+    try {
+      if (window.claude && typeof window.claude.use === 'function') {
+        downloadsNS = await window.claude.use('downloads');
+      }
+    } catch (e) {}
+    if (downloadsNS) {
+      exportBtn.disabled = false;
+      exportBtn.textContent = 'CSV로 내보내기 (Excel용)';
+    } else {
+      exportBtn.disabled = true;
+      exportBtn.textContent = '다운로드 사용 불가';
+      exportStatus.textContent = '이 화면에서는 파일 저장 기능을 사용할 수 없습니다.';
+    }
+  })();
+
+  exportBtn.addEventListener('click', async function () {
+    if (!downloadsNS) return;
+    exportBtn.disabled = true;
+    var prevLabel = exportBtn.textContent;
+    exportBtn.textContent = '내보내는 중…';
+    exportStatus.textContent = '';
+    try {
+      var csv = String.fromCharCode(0xFEFF) + buildCSV();
+      await downloadsNS.save({
+        filename: 'ISMS_AWS_Azure_Cloud_Audit_Matrix.csv',
+        data: csv
+      });
+      exportStatus.textContent = '다운로드 완료 · Excel에서 열어 확인하세요.';
+    } catch (err) {
+      var code = err && err.code;
+      exportStatus.textContent = ERROR_MESSAGES[code] || '다운로드에 실패했습니다.';
+    } finally {
+      exportBtn.disabled = false;
+      exportBtn.textContent = prevLabel;
+    }
+  });
+})();
+</script>

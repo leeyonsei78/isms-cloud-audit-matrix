@@ -1072,41 +1072,60 @@ az backup vault list --query "[].properties.storageType"</div><button class="cop
     unavailable: '이 화면에서는 다운로드를 사용할 수 없습니다.'
   };
 
+  var standaloneMode = false;
+
+  function triggerBlobDownload(filename, content) {
+    var blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
   (async function initDownloads() {
     try {
       if (window.claude && typeof window.claude.use === 'function') {
         downloadsNS = await window.claude.use('downloads');
       }
     } catch (e) {}
-    if (downloadsNS) {
-      exportBtn.disabled = false;
-      exportBtn.textContent = 'CSV로 내보내기 (Excel용)';
-    } else {
-      exportBtn.disabled = true;
-      exportBtn.textContent = '다운로드 사용 불가';
-      exportStatus.textContent = '이 화면에서는 파일 저장 기능을 사용할 수 없습니다.';
-    }
+    if (!downloadsNS) standaloneMode = true;
+    exportBtn.disabled = false;
+    exportBtn.textContent = 'CSV로 내보내기 (Excel용)';
   })();
 
   exportBtn.addEventListener('click', async function () {
-    if (!downloadsNS) return;
-    exportBtn.disabled = true;
     var prevLabel = exportBtn.textContent;
-    exportBtn.textContent = '내보내는 중…';
     exportStatus.textContent = '';
-    try {
-      var csv = String.fromCharCode(0xFEFF) + buildCSV();
-      await downloadsNS.save({
-        filename: 'ISMS_AWS_Azure_Cloud_Audit_Matrix.csv',
-        data: csv
-      });
-      exportStatus.textContent = '다운로드 완료 · Excel에서 열어 확인하세요.';
-    } catch (err) {
-      var code = err && err.code;
-      exportStatus.textContent = ERROR_MESSAGES[code] || '다운로드에 실패했습니다.';
-    } finally {
-      exportBtn.disabled = false;
-      exportBtn.textContent = prevLabel;
+    var csv = String.fromCharCode(0xFEFF) + buildCSV();
+    var filename = 'ISMS_AWS_Azure_Cloud_Audit_Matrix.csv';
+
+    if (downloadsNS) {
+      exportBtn.disabled = true;
+      exportBtn.textContent = '내보내는 중…';
+      try {
+        await downloadsNS.save({ filename: filename, data: csv });
+        exportStatus.textContent = '다운로드 완료 · Excel에서 열어 확인하세요.';
+      } catch (err) {
+        var code = err && err.code;
+        exportStatus.textContent = ERROR_MESSAGES[code] || '다운로드에 실패했습니다.';
+      } finally {
+        exportBtn.disabled = false;
+        exportBtn.textContent = prevLabel;
+      }
+      return;
+    }
+
+    if (standaloneMode) {
+      try {
+        triggerBlobDownload(filename, csv);
+        exportStatus.textContent = '다운로드 완료 · Excel에서 열어 확인하세요.';
+      } catch (e) {
+        exportStatus.textContent = '다운로드에 실패했습니다. 브라우저의 다운로드 차단 설정을 확인해 주세요.';
+      }
     }
   });
 })();

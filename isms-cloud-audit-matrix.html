@@ -1398,11 +1398,13 @@ az backup vault list --query "[].properties.storageType"</div><button class="cop
         body +=
           '<h3><span class="w-badge">' + escapeHtml(controlId) + '</span> ' + escapeHtml(controlName) + '</h3>' +
           '<p class="w-desc">' + escapeHtml(desc) + '</p>' +
-          '<table class="w-matrix"><tr>' +
-          '<th class="w-th-aws">AWS</th><th class="w-th-azure">Azure</th>' +
+          '<table class="w-matrix" width="100%" cellpadding="0" cellspacing="0" style="table-layout:fixed;mso-table-layout-alt:fixed;width:100%;">' +
+          '<colgroup><col width="50%" style="width:50%;"><col width="50%" style="width:50%;"></colgroup>' +
+          '<tr>' +
+          '<th class="w-th-aws" width="50%">AWS</th><th class="w-th-azure" width="50%">Azure</th>' +
           '</tr><tr>' +
-          '<td>' + providerCellHtml(card, '.provider.aws') + '</td>' +
-          '<td>' + providerCellHtml(card, '.provider.azure') + '</td>' +
+          '<td width="50%">' + providerCellHtml(card, '.provider.aws') + '</td>' +
+          '<td width="50%">' + providerCellHtml(card, '.provider.azure') + '</td>' +
           '</tr></table>';
       });
     });
@@ -1422,16 +1424,16 @@ az backup vault list --query "[].properties.storageType"</div><button class="cop
       'h3 { font-size: 12pt; margin: 14pt 0 3pt; }' +
       '.w-badge { font-family: Consolas, monospace; font-size: 9pt; background: #eef1f5; border: 1pt solid #dbe1e9; padding: 1pt 5pt; }' +
       '.w-desc { font-size: 9.5pt; color: #5b6572; margin: 0 0 6pt; }' +
-      'table.w-matrix { border-collapse: collapse; width: 100%; margin-bottom: 12pt; table-layout: fixed; }' +
-      'table.w-matrix th, table.w-matrix td { border: 1pt solid #dbe1e9; padding: 6pt 8pt; vertical-align: top; width: 50%; }' +
+      'table.w-matrix { border-collapse: collapse; width: 100%; margin-bottom: 12pt; table-layout: fixed; mso-table-layout-alt: fixed; }' +
+      'table.w-matrix th, table.w-matrix td { border: 1pt solid #dbe1e9; padding: 6pt 8pt; vertical-align: top; width: 50%; overflow: hidden; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; }' +
       'table.w-matrix th { font-family: Consolas, monospace; font-size: 9pt; text-align: left; }' +
       '.w-th-aws { background: #f6ead9; color: #a15a20; }' +
       '.w-th-azure { background: #dfeaf7; color: #2b5f96; }' +
       '.w-label { display: block; font-family: Consolas, monospace; font-size: 7.5pt; text-transform: uppercase; color: #8b95a3; margin: 6pt 0 2pt; }' +
       '.w-label:first-child { margin-top: 0; }' +
-      '.w-code { font-family: Consolas, monospace; font-size: 8.5pt; line-height: 1.5; background: #0e1420; color: #d9e2f1; padding: 6pt 8pt; }' +
-      '.w-crit { border-left: 3pt solid #a63a30; background: #f7e5e3; padding: 5pt 7pt; font-size: 9pt; }' +
-      '.w-fix { border-left: 3pt solid #326a41; background: #e3f0e6; padding: 5pt 7pt; font-size: 9pt; }' +
+      '.w-code { font-family: Consolas, monospace; font-size: 8.5pt; line-height: 1.5; background: #0e1420; color: #d9e2f1; padding: 6pt 8pt; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; }' +
+      '.w-crit { border-left: 3pt solid #a63a30; background: #f7e5e3; padding: 5pt 7pt; font-size: 9pt; word-wrap: break-word; }' +
+      '.w-fix { border-left: 3pt solid #326a41; background: #e3f0e6; padding: 5pt 7pt; font-size: 9pt; word-wrap: break-word; }' +
       '</style></head>' +
       '<body>' +
       '<h1>' + escapeHtml(title) + '</h1>' +

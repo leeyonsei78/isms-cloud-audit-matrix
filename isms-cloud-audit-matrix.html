@@ -207,6 +207,7 @@
   }
   .btn.danger { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); }
   .export-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .export-buttons { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
   .export-status { font-size: 11.5px; color: var(--text-faint); min-height: 14px; }
 
   .note-bar {
@@ -382,7 +383,10 @@
     <div class="spacer"></div>
     <button class="btn" id="resetBtn" type="button">편집 초기화</button>
     <div class="export-wrap">
-      <button class="btn primary" id="exportBtn" type="button" disabled>다운로드 준비 중…</button>
+      <div class="export-buttons">
+        <button class="btn primary" id="exportBtn" type="button" disabled>다운로드 준비 중…</button>
+        <button class="btn primary" id="exportWordBtn" type="button" disabled>다운로드 준비 중…</button>
+      </div>
       <span class="export-status" id="exportStatus"></span>
     </div>
   </div>
@@ -1352,6 +1356,91 @@ az backup vault list --query "[].properties.storageType"</div><button class="cop
     return rows.map(function (r) { return r.map(csvEscape).join(','); }).join('\r\n');
   }
 
+  // ---- Word (.doc) export ----
+  function escapeHtml(value) {
+    return (value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function codeBlockHtml(text) {
+    return '<div class="w-code">' + escapeHtml(text).replace(/\r?\n/g, '<br>') + '</div>';
+  }
+
+  function providerCellHtml(card, providerSel) {
+    var get = function (sel) {
+      var el = card.querySelector(providerSel + ' ' + sel);
+      return el ? el.textContent : '';
+    };
+    return (
+      '<span class="w-label">점검 명령어</span>' + codeBlockHtml(get('.field-cmd .code')) +
+      '<span class="w-label">실행 예시 및 결과</span>' + codeBlockHtml(get('.field-example .code')) +
+      '<span class="w-label">문제 판단 기준</span><div class="w-crit">' + escapeHtml(get('.field-crit .field-text')) + '</div>' +
+      '<span class="w-label">개선 방안</span><div class="w-fix">' + escapeHtml(get('.field-fix .field-text')) + '</div>'
+    );
+  }
+
+  function buildWordDocument() {
+    var title = '클라우드 ISMS 점검 매트릭스';
+    var lede = document.querySelector('.lede') ? document.querySelector('.lede').textContent : '';
+    var body = '';
+
+    document.querySelectorAll('.domain').forEach(function (domainEl) {
+      var domainId = domainEl.dataset.domainId;
+      var domainName = domainEl.dataset.domainName;
+      body += '<h2>' + escapeHtml(domainId) + ' ' + escapeHtml(domainName) + '</h2>';
+
+      domainEl.querySelectorAll('.card').forEach(function (card) {
+        var controlId = card.dataset.id;
+        var controlName = card.querySelector('.card-head h3') ? card.querySelector('.card-head h3').textContent : '';
+        var desc = card.querySelector('.card-desc') ? card.querySelector('.card-desc').textContent : '';
+        body +=
+          '<h3><span class="w-badge">' + escapeHtml(controlId) + '</span> ' + escapeHtml(controlName) + '</h3>' +
+          '<p class="w-desc">' + escapeHtml(desc) + '</p>' +
+          '<table class="w-matrix"><tr>' +
+          '<th class="w-th-aws">AWS</th><th class="w-th-azure">Azure</th>' +
+          '</tr><tr>' +
+          '<td>' + providerCellHtml(card, '.provider.aws') + '</td>' +
+          '<td>' + providerCellHtml(card, '.provider.azure') + '</td>' +
+          '</tr></table>';
+      });
+    });
+
+    return (
+      '<!DOCTYPE html>' +
+      '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
+      '<head><meta charset="utf-8"><title>' + escapeHtml(title) + '</title>' +
+      '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>90</w:Zoom>' +
+      '<w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->' +
+      '<style>' +
+      '@page { size: 29.7cm 21cm; mso-page-orientation: landscape; margin: 1.6cm; }' +
+      'body { font-family: "맑은 고딕", "Malgun Gothic", sans-serif; font-size: 10pt; color: #1a2230; }' +
+      'h1 { font-size: 20pt; color: #0d4f4e; margin-bottom: 4pt; }' +
+      '.w-lede { font-size: 10pt; color: #5b6572; margin-bottom: 16pt; }' +
+      'h2 { font-size: 14pt; color: #0d4f4e; border-bottom: 1.5pt solid #dbe1e9; padding-bottom: 4pt; margin-top: 22pt; }' +
+      'h3 { font-size: 12pt; margin: 14pt 0 3pt; }' +
+      '.w-badge { font-family: Consolas, monospace; font-size: 9pt; background: #eef1f5; border: 1pt solid #dbe1e9; padding: 1pt 5pt; }' +
+      '.w-desc { font-size: 9.5pt; color: #5b6572; margin: 0 0 6pt; }' +
+      'table.w-matrix { border-collapse: collapse; width: 100%; margin-bottom: 12pt; table-layout: fixed; }' +
+      'table.w-matrix th, table.w-matrix td { border: 1pt solid #dbe1e9; padding: 6pt 8pt; vertical-align: top; width: 50%; }' +
+      'table.w-matrix th { font-family: Consolas, monospace; font-size: 9pt; text-align: left; }' +
+      '.w-th-aws { background: #f6ead9; color: #a15a20; }' +
+      '.w-th-azure { background: #dfeaf7; color: #2b5f96; }' +
+      '.w-label { display: block; font-family: Consolas, monospace; font-size: 7.5pt; text-transform: uppercase; color: #8b95a3; margin: 6pt 0 2pt; }' +
+      '.w-label:first-child { margin-top: 0; }' +
+      '.w-code { font-family: Consolas, monospace; font-size: 8.5pt; line-height: 1.5; background: #0e1420; color: #d9e2f1; padding: 6pt 8pt; }' +
+      '.w-crit { border-left: 3pt solid #a63a30; background: #f7e5e3; padding: 5pt 7pt; font-size: 9pt; }' +
+      '.w-fix { border-left: 3pt solid #326a41; background: #e3f0e6; padding: 5pt 7pt; font-size: 9pt; }' +
+      '</style></head>' +
+      '<body>' +
+      '<h1>' + escapeHtml(title) + '</h1>' +
+      '<p class="w-lede">' + escapeHtml(lede) + '</p>' +
+      body +
+      '</body></html>'
+    );
+  }
+
   var ERROR_MESSAGES = {
     rejected_extension: '이 형식은 지원되지 않습니다.',
     extension_not_enabled: 'CSV 다운로드가 이 화면에서 비활성화되어 있습니다.',
@@ -1364,8 +1453,8 @@ az backup vault list --query "[].properties.storageType"</div><button class="cop
 
   var standaloneMode = false;
 
-  function triggerBlobDownload(filename, content) {
-    var blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+  function triggerBlobDownload(filename, content, mimeType) {
+    var blob = new Blob([content], { type: mimeType || 'text/csv;charset=utf-8;' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
@@ -1376,6 +1465,8 @@ az backup vault list --query "[].properties.storageType"</div><button class="cop
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   }
 
+  var exportWordBtn = document.getElementById('exportWordBtn');
+
   (async function initDownloads() {
     try {
       if (window.claude && typeof window.claude.use === 'function') {
@@ -1385,6 +1476,8 @@ az backup vault list --query "[].properties.storageType"</div><button class="cop
     if (!downloadsNS) standaloneMode = true;
     exportBtn.disabled = false;
     exportBtn.textContent = 'CSV로 내보내기 (Excel용)';
+    exportWordBtn.disabled = false;
+    exportWordBtn.textContent = 'Word로 내보내기 (.doc)';
   })();
 
   exportBtn.addEventListener('click', async function () {
@@ -1411,8 +1504,41 @@ az backup vault list --query "[].properties.storageType"</div><button class="cop
 
     if (standaloneMode) {
       try {
-        triggerBlobDownload(filename, csv);
+        triggerBlobDownload(filename, csv, 'text/csv;charset=utf-8;');
         exportStatus.textContent = '다운로드 완료 · Excel에서 열어 확인하세요.';
+      } catch (e) {
+        exportStatus.textContent = '다운로드에 실패했습니다. 브라우저의 다운로드 차단 설정을 확인해 주세요.';
+      }
+    }
+  });
+
+  exportWordBtn.addEventListener('click', async function () {
+    var prevLabel = exportWordBtn.textContent;
+    exportStatus.textContent = '';
+    var doc = buildWordDocument();
+    var filename = 'ISMS_AWS_Azure_Cloud_Audit_Matrix.doc';
+    var mimeType = 'application/msword;charset=utf-8;';
+
+    if (downloadsNS) {
+      exportWordBtn.disabled = true;
+      exportWordBtn.textContent = '내보내는 중…';
+      try {
+        await downloadsNS.save({ filename: filename, data: doc, mimeType: mimeType });
+        exportStatus.textContent = '다운로드 완료 · Word에서 열어 확인하세요.';
+      } catch (err) {
+        var code = err && err.code;
+        exportStatus.textContent = ERROR_MESSAGES[code] || '다운로드에 실패했습니다.';
+      } finally {
+        exportWordBtn.disabled = false;
+        exportWordBtn.textContent = prevLabel;
+      }
+      return;
+    }
+
+    if (standaloneMode) {
+      try {
+        triggerBlobDownload(filename, doc, mimeType);
+        exportStatus.textContent = '다운로드 완료 · Word에서 열어 확인하세요.';
       } catch (e) {
         exportStatus.textContent = '다운로드에 실패했습니다. 브라우저의 다운로드 차단 설정을 확인해 주세요.';
       }

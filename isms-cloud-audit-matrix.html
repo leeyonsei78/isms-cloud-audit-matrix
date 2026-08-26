@@ -422,6 +422,12 @@ aws iam list-users --query 'Users[*].[UserName,PasswordLastUsed]' --output table
     "Description": "Your credential report is ready to download."
 }
 
+$ aws iam get-credential-report --query 'Content' --output text | base64 --decode
+user,arn,user_creation_time,password_enabled,password_last_used,mfa_active,access_key_1_active,access_key_1_last_used_date
+dev-kim,arn:aws:iam::123456789012:user/dev-kim,2025-01-10T00:00:00Z,true,2026-08-20T09:12:00Z,true,true,2026-08-25T10:03:00Z
+contractor-lee,arn:aws:iam::123456789012:user/contractor-lee,2024-03-02T00:00:00Z,true,N/A,false,true,2024-04-01T00:00:00Z
+→ contractor-lee는 password_last_used가 N/A(미사용)이고 mfa_active도 false, access_key도 2024년 이후 사용 이력이 없음
+
 $ aws iam list-users --query 'Users[*].[UserName,PasswordLastUsed]' --output table
 ---------------------------------------------------
 |                    ListUsers                      |
@@ -476,6 +482,14 @@ aws iam get-credential-report --query 'Content' --output text | base64 --decode<
               <div class="code-shell"><div class="code" data-key="2.5.3-aws-example" contenteditable="true">$ aws iam get-account-summary --query 'SummaryMap.AccountMFAEnabled'
 0
 → root 계정 MFA 미설정(0=비활성, 1=활성)
+
+$ aws iam list-virtual-mfa-devices
+{
+    "VirtualMFADevices": [
+        { "SerialNumber": "arn:aws:iam::123456789012:mfa/ops-park", "User": { "UserName": "ops-park" } }
+    ]
+}
+→ 콘솔 로그인 권한이 있는 IAM 사용자가 여럿인데 가상 MFA가 등록된 사용자는 1명뿐
 
 $ aws iam get-credential-report --query 'Content' --output text | base64 --decode | grep -c ",false,"
 6
@@ -572,7 +586,14 @@ $ aws iam list-attached-user-policies --user-name dev-kim
         { "PolicyName": "AdministratorAccess", "PolicyArn": "arn:aws:iam::aws:policy/AdministratorAccess" }
     ]
 }
-→ 개발 담당자에게 관리자 전체 권한(AdministratorAccess)이 그대로 부여됨</div><button class="copy-btn" type="button">복사</button></div>
+→ 개발 담당자에게 관리자 전체 권한(AdministratorAccess)이 그대로 부여됨
+
+$ aws iam list-policies --scope Local --only-attached --query "Policies[*].PolicyName"
+[
+  "FullS3AdminPolicy",
+  "AllEC2Access"
+]
+→ 이름만으로는 권한 범위를 가늠하기 어려운 자체 제작(Customer Managed) 정책들이 다수의 사용자·역할에 연결되어 있어 별도 권한 범위 재검토 필요</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.5.5-aws-crit" contenteditable="true">root 계정으로 일상 업무(콘솔 로그인·API 호출) 이력 존재, 다수 사용자에게 AdministratorAccess 등 광범위한 권한이 그대로 부여됨</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.5.5-aws-fix" contenteditable="true">root는 최초 설정·비상시에만 사용하도록 절차화, 일상 관리 업무는 Assume Role 기반 IAM Role로 전환, 업무별 최소권한 Customer Managed Policy로 세분화</div></div>
@@ -613,7 +634,13 @@ aws iam list-access-keys --user-name USER_NAME
 aws accessanalyzer list-findings</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
-              <div class="code-shell"><div class="code" data-key="2.5.6-aws-example" contenteditable="true">$ aws iam list-access-keys --user-name svc-batch
+              <div class="code-shell"><div class="code" data-key="2.5.6-aws-example" contenteditable="true">$ aws iam get-credential-report --query 'Content' --output text | base64 --decode | awk -F',' '{print $1","$11}'
+user,access_key_1_last_used_date
+svc-batch,2024-01-15T00:00:00Z
+dev-kim,2026-08-25T10:03:00Z
+→ svc-batch 계정의 액세스 키가 2년 넘게 갱신·재검토되지 않고 그대로 사용 중
+
+$ aws iam list-access-keys --user-name svc-batch
 {
     "AccessKeyMetadata": [
         { "AccessKeyId": "AKIA****ABCD", "Status": "Active", "CreateDate": "2024-02-10T00:00:00Z" }
@@ -641,7 +668,13 @@ az role assignment list --all -o table</div><button class="copy-btn" type="butto
 [
   { "keyId": "a1b2c3d4...", "endDate": "2027-08-01T00:00:00Z" }
 ]
-→ 시크릿 만료일이 발급일 기준 3년 뒤로 설정(권장 180일 초과), 정기 Access Review 미구성</div><button class="copy-btn" type="button">복사</button></div>
+→ 시크릿 만료일이 발급일 기준 3년 뒤로 설정(권장 180일 초과), 정기 Access Review 미구성
+
+$ az role assignment list --all -o table
+Principal                 Role         Scope
+-------------------------  -----------  ------------------------------
+svc-ci-pipeline             Contributor  /subscriptions/xxxx
+→ 마지막 Access Review 이후 6개월 넘게 재검토 기록이 없는 서비스 프린시펄에 Contributor 권한이 계속 유지되고 있음</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.5.6-azure-crit" contenteditable="true">서비스 프린시펄 시크릿 만료일이 1년 이상으로 설정되거나 이미 만료된 자격증명이 남아있음, 정기 Access Review가 구성되어 있지 않음</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.5.6-azure-fix" contenteditable="true">서비스 프린시펄은 관리 ID(Managed Identity) 또는 인증서로 전환, 부득이 시크릿 사용 시 수명을 180일 이하로 단축, Entra ID Access Reviews를 분기 단위로 자동화</div></div>
@@ -687,7 +720,14 @@ az role assignment list --all -o table</div><button class="copy-btn" type="butto
 az network nsg rule list --nsg-name NSG_NAME -g RESOURCE_GROUP --query "[?sourceAddressPrefix=='*']"</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
-              <div class="code-shell"><div class="code" data-key="2.6.1-azure-example" contenteditable="true">$ az network nsg rule list --nsg-name prod-nsg -g rg-prod --query "[?sourceAddressPrefix=='*']"
+              <div class="code-shell"><div class="code" data-key="2.6.1-azure-example" contenteditable="true">$ az network nsg list -o table
+Name         ResourceGroup    Location
+-----------  ---------------  ------------
+prod-nsg      rg-prod          koreacentral
+legacy-nsg    rg-legacy        koreacentral
+→ legacy-nsg 등 소유 관계가 불분명한 오래된 NSG가 함께 존재해 규칙 관리 사각지대가 생길 수 있음
+
+$ az network nsg rule list --nsg-name prod-nsg -g rg-prod --query "[?sourceAddressPrefix=='*']"
 [
   { "name": "Allow-RDP-Any", "destinationPortRange": "3389", "access": "Allow", "direction": "Inbound" }
 ]
@@ -755,7 +795,11 @@ aws ec2 describe-nat-gateways --query "NatGateways[*].[NatGatewayId,State]"</div
 [
     [ { "DestinationCidrBlock": "0.0.0.0/0", "GatewayId": "igw-0123456789abcdef0" } ]
 ]
-→ DB 서브넷에 연결된 라우팅 테이블에도 인터넷 게이트웨이(IGW) 경로가 존재(직접 인터넷 라우팅 가능)</div><button class="copy-btn" type="button">복사</button></div>
+→ DB 서브넷에 연결된 라우팅 테이블에도 인터넷 게이트웨이(IGW) 경로가 존재(직접 인터넷 라우팅 가능)
+
+$ aws ec2 describe-nat-gateways --query "NatGateways[*].[NatGatewayId,State]"
+[]
+→ NAT Gateway가 하나도 없어, Private Subnet으로 분리해도 아웃바운드 경로를 별도로 통제할 수단이 없는 상태(2.6.1 보안그룹 아웃바운드 설정과 교차 확인 필요)</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.6.7-aws-crit" contenteditable="true">DB 등 민감 서브넷이 인터넷 게이트웨이(IGW)로 직접 라우팅되어 있음, 보안그룹 아웃바운드가 0.0.0.0/0 전면 허용 상태</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.6.7-aws-fix" contenteditable="true">민감 자원은 Private Subnet + NAT Gateway 구조로 전환, 아웃바운드도 필요한 목적지·포트로 제한, VPC Endpoint로 AWS 서비스 접근 시 인터넷 경유 최소화</div></div>
@@ -812,7 +856,11 @@ aws rds describe-db-instances --query 'DBInstances[?StorageEncrypted==`false`].D
 
 $ aws s3api get-bucket-encryption --bucket legacy-uploads-bucket
 An error occurred (ServerSideEncryptionConfigurationNotFoundError) when calling the GetBucketEncryption operation
-→ 미암호화 EBS 볼륨 1개, 기본 암호화가 설정되지 않은 S3 버킷 확인</div><button class="copy-btn" type="button">복사</button></div>
+→ 미암호화 EBS 볼륨 1개, 기본 암호화가 설정되지 않은 S3 버킷 확인
+
+$ aws rds describe-db-instances --query 'DBInstances[?StorageEncrypted==`false`].DBInstanceIdentifier'
+[ "legacy-mysql-01" ]
+→ 스토리지 암호화가 적용되지 않은 RDS 인스턴스 1개 확인(생성 시점에만 지정 가능하므로 기존 인스턴스는 암호화된 스냅샷으로 재생성 필요)</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.7.1-aws-crit" contenteditable="true">EBS 볼륨·RDS·S3 버킷 중 암호화가 적용되지 않은 자원이 존재(특히 개인정보·중요정보 저장소), get-bucket-encryption 조회 시 NoSuchEncryption 오류 반환</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.7.1-aws-fix" contenteditable="true">계정 단위 EBS 기본 암호화 활성화, S3 기본 암호화(SSE-S3·SSE-KMS)를 강제하고 버킷 정책으로 미암호화 업로드 거부, RDS는 스냅샷 복사 후 암호화 옵션으로 재생성</div></div>
@@ -825,7 +873,20 @@ az storage account show -n STORAGE_ACCOUNT --query "encryption"
 az sql db tde show -g RESOURCE_GROUP -s SQL_SERVER -n DB_NAME</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
-              <div class="code-shell"><div class="code" data-key="2.7.1-azure-example" contenteditable="true">$ az sql db tde show -g rg-prod -s sql-prod-01 -n customerdb --query "status"
+              <div class="code-shell"><div class="code" data-key="2.7.1-azure-example" contenteditable="true">$ az disk list --query "[?encryption.type=='EncryptionAtRestWithPlatformKey']" -o table
+Name              ResourceGroup
+----------------  ---------------
+disk-legacy-app    rg-legacy
+→ 플랫폼 관리형 키로만 암호화된 디스크가 존재. 규제상 고객관리키(CMK)가 필요한 자원인지 별도 확인 필요
+
+$ az storage account show -n stlegacyapp --query "encryption"
+{
+  "keySource": "Microsoft.Storage",
+  "requireInfrastructureEncryption": null
+}
+→ Storage Account가 기본 서비스 암호화만 적용되어 있고 고객관리키(CMK)는 미적용
+
+$ az sql db tde show -g rg-prod -s sql-prod-01 -n customerdb --query "status"
 "Disabled"
 → 고객 데이터베이스의 투명한 데이터 암호화(TDE)가 비활성화 상태</div><button class="copy-btn" type="button">복사</button></div>
             </div>
@@ -847,11 +908,26 @@ aws kms get-key-rotation-status --key-id KEY_ID
 aws kms get-key-policy --key-id KEY_ID --policy-name default</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
-              <div class="code-shell"><div class="code" data-key="2.7.2-aws-example" contenteditable="true">$ aws kms get-key-rotation-status --key-id 1234abcd-12ab-34cd-56ef-1234567890ab
+              <div class="code-shell"><div class="code" data-key="2.7.2-aws-example" contenteditable="true">$ aws kms list-keys
+{
+    "Keys": [
+        { "KeyId": "1234abcd-12ab-34cd-56ef-1234567890ab" },
+        { "KeyId": "9f8e7d6c-5b4a-3210-9988-776655443322" }
+    ]
+}
+→ 계정에 등록된 KMS 키 2건 확인, 각 키의 로테이션·정책을 개별 점검 필요
+
+$ aws kms get-key-rotation-status --key-id 1234abcd-12ab-34cd-56ef-1234567890ab
 {
     "KeyRotationEnabled": false
 }
-→ 고객관리형 키(CMK)의 자동 로테이션이 비활성화되어 있음</div><button class="copy-btn" type="button">복사</button></div>
+→ 고객관리형 키(CMK)의 자동 로테이션이 비활성화되어 있음
+
+$ aws kms get-key-policy --key-id 1234abcd-12ab-34cd-56ef-1234567890ab --policy-name default
+{
+    "Policy": "{\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"*\"},\"Action\":\"kms:*\"}]}"
+}
+→ 키 정책의 Principal이 "*"(계정 내 모든 사용자)로 과도하게 넓게 허용되어 있음</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.7.2-aws-crit" contenteditable="true">고객관리형 키(CMK)의 자동 로테이션이 비활성화, 키 정책의 Principal이 과도하게 넓게(예: 계정 전체 또는 *) 허용되어 있음</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.7.2-aws-fix" contenteditable="true">KMS 키 자동 로테이션(연 1회) 활성화, 키 정책을 특정 Role·서비스로 최소권한화, CloudTrail 데이터 이벤트로 키 사용 이력 감사</div></div>
@@ -864,7 +940,20 @@ az keyvault key list --vault-name KEYVAULT_NAME
 az keyvault show --name KEYVAULT_NAME --query "properties.{purgeProtection:enablePurgeProtection,softDelete:enableSoftDelete}"</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
-              <div class="code-shell"><div class="code" data-key="2.7.2-azure-example" contenteditable="true">$ az keyvault show --name kv-prod-secrets --query "properties.{purgeProtection:enablePurgeProtection,softDelete:enableSoftDelete}"
+              <div class="code-shell"><div class="code" data-key="2.7.2-azure-example" contenteditable="true">$ az keyvault list -o table
+Name              ResourceGroup    Location
+----------------  ---------------  ------------
+kv-prod-secrets    rg-prod          koreacentral
+kv-legacy          rg-legacy        koreacentral
+→ kv-legacy 등 사용처가 불분명한 Key Vault가 함께 존재, 소유자·용도 확인 필요
+
+$ az keyvault key list --vault-name kv-prod-secrets --query "[].{name:name,expires:attributes.expires}"
+[
+  { "name": "app-encryption-key", "expires": null }
+]
+→ 키에 만료일(expires)이 설정되지 않아 무기한 사용 중
+
+$ az keyvault show --name kv-prod-secrets --query "properties.{purgeProtection:enablePurgeProtection,softDelete:enableSoftDelete}"
 {
   "purgeProtection": null,
   "softDelete": true
@@ -905,7 +994,22 @@ aws cloudtrail get-event-selectors --trail-name TRAIL_NAME</div><button class="c
 [
     [ "main-trail", false, false ]
 ]
-→ 단일 리전에서만 로깅되어(IsMultiRegionTrail=false) 타 리전 활동이 누락됨</div><button class="copy-btn" type="button">복사</button></div>
+→ 단일 리전에서만 로깅되어(IsMultiRegionTrail=false) 타 리전 활동이 누락됨
+
+$ aws cloudtrail get-trail-status --name main-trail
+{
+    "IsLogging": true,
+    "LatestDeliveryTime": "2026-08-26T13:00:00Z"
+}
+→ 트레일은 정상적으로 로깅 중이나, 위 결과처럼 단일 리전 트레일이라 로그 수집 범위 자체가 제한적
+
+$ aws cloudtrail get-event-selectors --trail-name main-trail
+{
+    "EventSelectors": [
+        { "ReadWriteType": "WriteOnly", "IncludeManagementEvents": true, "DataResources": [] }
+    ]
+}
+→ 관리 이벤트는 기록되지만 S3·Lambda 등 데이터 이벤트(DataResources)는 수집 설정이 비어 있어 세부 접근 기록이 남지 않음</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.9.4-aws-crit" contenteditable="true">CloudTrail이 일부 리전에서 비활성화되어 있거나 IsMultiRegionTrail이 false, 로그 보관 기간이 법정 요구(접속기록 2년 이상 등)에 미달</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.9.4-aws-fix" contenteditable="true">전 리전 CloudTrail 활성화 및 Organizations 단위 통합 추적 구성, S3 로그 버킷에 수명주기 정책으로 법정 보관기간 이상 보존, CloudWatch Logs 연동으로 실시간 모니터링</div></div>
@@ -920,7 +1024,19 @@ az monitor activity-log list --start-time 2026-05-01</div><button class="copy-bt
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
               <div class="code-shell"><div class="code" data-key="2.9.4-azure-example" contenteditable="true">$ az monitor diagnostic-settings list --resource /subscriptions/xxxx/resourceGroups/rg-prod/providers/Microsoft.Sql/servers/sql-prod-01
 []
-→ 핵심 SQL 서버에 진단 설정(Diagnostic Settings)이 구성되지 않아 로그가 수집되지 않음</div><button class="copy-btn" type="button">복사</button></div>
+→ 핵심 SQL 서버에 진단 설정(Diagnostic Settings)이 구성되지 않아 로그가 수집되지 않음
+
+$ az monitor log-analytics workspace list -o table
+Name       ResourceGroup    RetentionInDays
+---------  ---------------  -----------------
+law-prod    rg-prod          30
+→ Log Analytics Workspace 보존기간이 기본값 30일로 짧게 설정되어 있어 장기 조회·법정 보관 요건 충족이 어려움
+
+$ az monitor activity-log list --start-time 2026-05-01 --query "[?operationName.value=='Microsoft.Authorization/roleAssignments/write']"
+[
+  { "caller": "kim.admin@contoso.com", "eventTimestamp": "2026-05-14T02:11:00Z" }
+]
+→ 권한 변경(roleAssignments/write) 이력 자체는 조회되나, 이를 정기적으로 검토하는 절차가 확인되지 않음</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.9.4-azure-crit" contenteditable="true">핵심 리소스(구독, 주요 VM·DB)에 진단 설정(Diagnostic Settings)이 구성되지 않아 로그가 수집되지 않음, Activity Log 보존기간이 기본값(90일)에 그쳐 법정 보관기간 미달</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.9.4-azure-fix" contenteditable="true">전 구독·핵심 리소스에 Diagnostic Settings를 Log Analytics·Storage Account로 연동, Storage 수명주기 정책으로 장기보관(2년 이상), Azure Policy(Deploy if not exists)로 진단설정 강제</div></div>
@@ -942,7 +1058,15 @@ aws s3api get-public-access-block --bucket LOG_BUCKET</div><button class="copy-b
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
               <div class="code-shell"><div class="code" data-key="2.9.5-aws-example" contenteditable="true">$ aws cloudtrail get-trail-status --name main-trail --query "LogFileValidationEnabled"
 false
-→ 로그파일 무결성 검증(SHA-256 다이제스트 서명)이 비활성화 상태</div><button class="copy-btn" type="button">복사</button></div>
+→ 로그파일 무결성 검증(SHA-256 다이제스트 서명)이 비활성화 상태
+
+$ aws s3api get-bucket-policy --bucket main-trail-logs
+An error occurred (NoSuchBucketPolicy) when calling the GetBucketPolicy operation: The bucket policy does not exist
+→ 로그 버킷에 별도 정책이 없어 IAM 권한만 있으면 누구나 접근 가능한 상태(추가 제한 없음)
+
+$ aws s3api get-public-access-block --bucket main-trail-logs
+An error occurred (NoSuchPublicAccessBlockConfiguration) when calling the GetPublicAccessBlock operation
+→ Public Access Block 설정 자체가 없어, 버킷 정책·ACL 설정 실수 시 로그가 외부에 노출될 위험이 있음</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.9.5-aws-crit" contenteditable="true">로그파일 무결성 검증(Log File Validation)이 비활성화, 로그 버킷이 일반 관리자에게 삭제·수정 권한을 부여하거나 퍼블릭 접근이 가능</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.9.5-aws-fix" contenteditable="true">Log File Validation 활성화(SHA-256 다이제스트 서명), 로그 버킷을 별도 계정으로 분리 후 Object Lock(WORM)·최소권한 정책 적용, 월 1회 이상 로그 검토·이상탐지 자동화(Athena 등)</div></div>
@@ -958,7 +1082,13 @@ az role assignment list --scope WORKSPACE_ID -o table</div><button class="copy-b
 {
   "enabled": false
 }
-→ 로그 저장 컨테이너에 불변성(Immutable)·삭제 방지 정책이 적용되지 않아 변조·삭제가 가능</div><button class="copy-btn" type="button">복사</button></div>
+→ 로그 저장 컨테이너에 불변성(Immutable)·삭제 방지 정책이 적용되지 않아 변조·삭제가 가능
+
+$ az role assignment list --scope /subscriptions/xxxx/resourceGroups/rg-prod/providers/Microsoft.OperationalInsights/workspaces/law-prod -o table
+Principal                  Role
+--------------------------  -----------
+dev-team-all@contoso.com    Contributor
+→ 개발팀 전체 그룹에 Log Analytics Workspace 편집(Contributor) 권한이 부여되어 있어 로그 삭제·수정이 가능한 인원이 과도하게 많음</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.9.5-azure-crit" contenteditable="true">로그 저장 Storage Account에 불변성(Immutable Blob Storage)이 설정되지 않아 변조·삭제가 가능, Log Analytics Workspace에 과다한 사용자가 편집 권한을 보유</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.9.5-azure-fix" contenteditable="true">Immutable Blob Storage(WORM) 정책 적용, Workspace RBAC를 Reader 중심으로 최소화, 관리자 로그인·권한변경 기준 쿼리로 정기 로그 점검 자동화(Sentinel·Workbook)</div></div>
@@ -990,7 +1120,19 @@ aws organizations describe-organization
 aws securityhub get-findings --filters '{"ComplianceStatus":[{"Value":"FAILED","Comparison":"EQUALS"}]}'</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
-              <div class="code-shell"><div class="code" data-key="2.10.2-aws-example" contenteditable="true">$ aws securityhub get-findings --filters '{"ComplianceStatus":[{"Value":"FAILED","Comparison":"EQUALS"}]}' --query 'Findings[].Title'
+              <div class="code-shell"><div class="code" data-key="2.10.2-aws-example" contenteditable="true">$ aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=ConsoleLogin --max-results 3
+{
+    "Events": [
+        { "Username": "kim.admin", "EventTime": "2026-08-24T19:32:00Z" }
+    ]
+}
+→ 평소 업무 시간(09~18시)이 아닌 심야 시간대 콘솔 로그인 이력 확인, CloudTrailEvent의 접속 IP도 사내 대역이 아님
+
+$ aws organizations describe-organization
+An error occurred (AWSOrganizationsNotInUseException) when calling the DescribeOrganization operation: Your account is not a member of an organization
+→ AWS Organizations 자체가 구성되어 있지 않아 다계정 환경에서도 SCP 등 계정 간 가드레일이 전혀 적용되지 않음
+
+$ aws securityhub get-findings --filters '{"ComplianceStatus":[{"Value":"FAILED","Comparison":"EQUALS"}]}' --query 'Findings[].Title'
 [
   "1.14 IAM 사용자 액세스 키가 90일 이상 교체되지 않음",
   "2.3 로그 버킷이 퍼블릭 접근 가능"
@@ -1008,7 +1150,17 @@ az policy assignment list -o table
 az security regulatory-compliance-standards list</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
-              <div class="code-shell"><div class="code" data-key="2.10.2-azure-example" contenteditable="true">$ az security regulatory-compliance-standards list --query "[].{name:name,state:state}"
+              <div class="code-shell"><div class="code" data-key="2.10.2-azure-example" contenteditable="true">$ az account management-group list -o table
+Name       DisplayName
+---------  -------------------
+mg-root     Tenant Root Group
+→ 관리 그룹이 루트 하나뿐이며, 운영·개발 구독을 구분하는 하위 관리 그룹 구조가 없음
+
+$ az policy assignment list -o table
+(빈 결과)
+→ 구독에 적용된 Azure Policy 할당이 하나도 없어 조직 차원의 보안 기준이 강제되지 않음
+
+$ az security regulatory-compliance-standards list --query "[].{name:name,state:state}"
 [
   { "name": "ISO 27001", "state": "Failed" }
 ]
@@ -1032,11 +1184,25 @@ aws ssm list-compliance-items --resource-id INSTANCE_ID
 aws ssm describe-patch-group-state --patch-group PATCH_GROUP</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
-              <div class="code-shell"><div class="code" data-key="2.10.8-aws-example" contenteditable="true">$ aws ssm list-compliance-items --resource-id i-0abc123def456 --query "ComplianceItems[?Status=='NON_COMPLIANT']"
+              <div class="code-shell"><div class="code" data-key="2.10.8-aws-example" contenteditable="true">$ aws ssm describe-instance-information --query "InstanceInformationList[*].[InstanceId,PingStatus]"
+[
+    [ "i-0abc123def456", "Online" ],
+    [ "i-0fed987cba654", "ConnectionLost" ]
+]
+→ i-0fed987cba654는 SSM Agent 연결이 끊겨(ConnectionLost) 패치 현황 자체를 확인할 수 없는 상태
+
+$ aws ssm list-compliance-items --resource-id i-0abc123def456 --query "ComplianceItems[?Status=='NON_COMPLIANT']"
 [
   { "Title": "CVE-2026-XXXX", "Severity": "CRITICAL", "Status": "NON_COMPLIANT" }
 ]
-→ CRITICAL 등급 미적용 패치 존재</div><button class="copy-btn" type="button">복사</button></div>
+→ CRITICAL 등급 미적용 패치 존재
+
+$ aws ssm describe-patch-group-state --patch-group prod-patch-group
+{
+    "InstancesWithCriticalNonCompliantPatches": 3,
+    "InstancesWithMissingPatches": 5
+}
+→ 패치 그룹 내 3대가 CRITICAL 패치 미준수 상태이고, 5대는 패치 정보 자체가 수집되지 않음</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.10.8-aws-crit" contenteditable="true">Systems Manager 관리 대상에 등록되지 않은 인스턴스가 존재(패치 관리 사각지대), Patch Compliance 상태가 NON_COMPLIANT인 인스턴스가 다수</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.10.8-aws-fix" contenteditable="true">전 EC2에 SSM Agent 설치 및 Patch Manager 베이스라인·일정 적용, Maintenance Window로 정기 패치 자동화, Compliance 대시보드로 미준수 인스턴스 상시 추적</div></div>
@@ -1050,7 +1216,11 @@ az automation software-update-configuration list --automation-account-name AUTOM
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
               <div class="code-shell"><div class="code" data-key="2.10.8-azure-example" contenteditable="true">$ az vm assess-patches -g rg-prod -n vm-app-01 --query "criticalAndSecurityPatchCount"
 7
-→ Critical·Security 등급 패치 7건이 미적용 상태</div><button class="copy-btn" type="button">복사</button></div>
+→ Critical·Security 등급 패치 7건이 미적용 상태
+
+$ az automation software-update-configuration list --automation-account-name aa-prod -g rg-prod --query "[].{name:name,nextRun:nextRunTime}"
+[]
+→ Azure Automation 기반 자동 패치 일정(Update Configuration)이 하나도 구성되어 있지 않아, vm-app-01의 미적용 패치가 수동 조치를 기다리는 상태</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.10.8-azure-crit" contenteditable="true">Automatic VM Guest Patching이 미설정, Update Management(Azure Automation)에 등록되지 않은 VM이 존재, 평가 결과 Critical·Security 패치가 다수 미적용</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.10.8-azure-fix" contenteditable="true">Automatic Guest Patching 활성화 또는 Azure Update Manager로 일원화, Maintenance Configuration으로 정기 패치 일정 수립, 패치 준수율 대시보드로 상시 추적</div></div>
@@ -1081,7 +1251,15 @@ az automation software-update-configuration list --automation-account-name AUTOM
 aws inspector2 list-findings --filter-criteria '{"severity":[{"comparison":"EQUALS","value":"CRITICAL"}]}'</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
-              <div class="code-shell"><div class="code" data-key="2.11.2-aws-example" contenteditable="true">$ aws inspector2 list-findings --filter-criteria '{"severity":[{"comparison":"EQUALS","value":"CRITICAL"}]}' --query 'findings[].title'
+              <div class="code-shell"><div class="code" data-key="2.11.2-aws-example" contenteditable="true">$ aws inspector2 batch-get-account-status
+{
+    "accounts": [
+        { "accountId": "123456789012", "resourceState": { "ec2": { "status": "DISABLED" } } }
+    ]
+}
+→ EC2에 대한 Inspector2 스캔이 비활성화(DISABLED) 상태여서 해당 범위의 취약점이 애초에 탐지되지 않음
+
+$ aws inspector2 list-findings --filter-criteria '{"severity":[{"comparison":"EQUALS","value":"CRITICAL"}]}' --query 'findings[].title'
 [
   "CVE-2026-1111 - OpenSSL 취약점"
 ]
@@ -1101,7 +1279,13 @@ az security sub-assessment list</div><button class="copy-btn" type="button">복�
 [
   "디스크 암호화가 적용되지 않음"
 ]
-→ Unhealthy 평가 항목이 존재하며 조치 이력이 없음</div><button class="copy-btn" type="button">복사</button></div>
+→ Unhealthy 평가 항목이 존재하며 조치 이력이 없음
+
+$ az security sub-assessment list --query "[].{finding:displayName,severity:status.severity}"
+[
+  { "finding": "취약한 TLS 버전 사용", "severity": "High" }
+]
+→ 상위 평가(Assessment) 하위의 세부 취약점(Sub-Assessment)에도 High 등급 미조치 항목이 존재</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.11.2-azure-crit" contenteditable="true">Defender for Cloud 취약점 평가가 일부 리소스에 구성되지 않음, Unhealthy 평가 항목이 장기간 조치되지 않고 누적됨</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.11.2-azure-fix" contenteditable="true">Defender for Servers·Containers 등 플랜을 활성화해 취약점 스캔을 자동화, Unhealthy 항목을 SLA로 관리하고 Secure Score에 반영, 월 1회 이상 취약점 리포트 검토</div></div>
@@ -1125,7 +1309,24 @@ aws guardduty list-findings --detector-id DETECTOR_ID</div><button class="copy-b
 {
     "DetectorIds": []
 }
-→ GuardDuty 탐지기가 생성되어 있지 않음(비활성화 상태)</div><button class="copy-btn" type="button">복사</button></div>
+→ 주 운영 리전(ap-northeast-2)에는 GuardDuty 탐지기가 생성되어 있지 않음(비활성화 상태)
+
+$ aws guardduty list-detectors --region us-east-1
+{
+    "DetectorIds": [ "12abc34def56gh78ij90klmn" ]
+}
+$ aws guardduty get-detector --detector-id 12abc34def56gh78ij90klmn --region us-east-1
+{
+    "Status": "ENABLED",
+    "FindingPublishingFrequency": "SIX_HOURS"
+}
+→ 다른 리전(us-east-1)에는 예전에 활성화해둔 탐지기가 남아있음. 리전별로 활성화 상태가 제각각이라 관리가 안 되고 있음
+
+$ aws guardduty list-findings --detector-id 12abc34def56gh78ij90klmn --region us-east-1 --finding-criteria '{"Criterion":{"severity":{"Gte":7}}}'
+{
+    "FindingIds": [ "8ab9cd0-ef12-3456-ghij-klmnopqrstuv" ]
+}
+→ 방치된 리전의 탐지기에도 심각도 7 이상(High~Critical) Finding이 쌓여 있으나 아무도 대응하지 않은 상태</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.11.3-aws-crit" contenteditable="true">GuardDuty가 비활성화되어 있음, 활성화된 경우에도 High·Critical Finding이 장기간 확인·대응되지 않고 누적됨</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.11.3-aws-fix" contenteditable="true">전 계정·리전에 GuardDuty 활성화(Organizations 위임 관리자로 중앙화), Finding을 EventBridge+SNS 또는 SOAR로 자동 알림·대응 연계, 위협 인텔리전스 룰셋 정기 갱신</div></div>
@@ -1141,7 +1342,13 @@ az security auto-provisioning-setting list</div><button class="copy-btn" type="b
 [
   "비정상적인 위치에서의 로그인 시도"
 ]
-→ 미해결 상태의 Active Alert가 존재</div><button class="copy-btn" type="button">복사</button></div>
+→ 미해결 상태의 Active Alert가 존재
+
+$ az security auto-provisioning-setting list --query "[].{name:name,setting:autoProvision}"
+[
+  { "name": "default", "setting": "Off" }
+]
+→ 모니터링 에이전트 자동 프로비저닝이 Off 상태여서 신규로 생성되는 VM이 Defender 모니터링 대상에서 누락될 수 있음</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.11.3-azure-crit" contenteditable="true">Defender for Cloud Active Alert이 다수 미해결 상태로 누적됨, 자동 프로비저닝(모니터링 에이전트 배포)이 비활성화되어 일부 리소스가 모니터링 사각지대에 있음</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.11.3-azure-fix" contenteditable="true">Defender for Cloud 전체 플랜과 Auto-provisioning 활성화, Microsoft Sentinel 연동으로 상관분석·자동대응(Playbook) 구성, Active Alert 대응 SLA 수립</div></div>
@@ -1173,11 +1380,23 @@ aws backup list-backup-jobs --by-state FAILED
 aws dlm get-lifecycle-policies</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
-              <div class="code-shell"><div class="code" data-key="2.12.1-aws-example" contenteditable="true">$ aws backup list-backup-jobs --by-state FAILED --query 'BackupJobs[].[ResourceArn,CreationDate]'
+              <div class="code-shell"><div class="code" data-key="2.12.1-aws-example" contenteditable="true">$ aws backup list-backup-plans
+{
+    "BackupPlansList": [
+        { "BackupPlanName": "prod-daily-backup", "BackupPlanId": "a1b2c3d4-5e6f-7890-abcd-ef1234567890" }
+    ]
+}
+→ 백업 계획이 1개뿐이라, 이 계획이 어떤 리소스(태그 기준 등)까지 포함하는지 추가로 확인해야 프로덕션 DB 누락 여부를 알 수 있음
+
+$ aws backup list-backup-jobs --by-state FAILED --query 'BackupJobs[].[ResourceArn,CreationDate]'
 [
   [ "arn:aws:rds:ap-northeast-2:xxxx:db:prod-db", "2026-08-24T01:00:00Z" ]
 ]
-→ 프로덕션 DB의 최근 백업 작업이 실패(FAILED)한 이력 확인</div><button class="copy-btn" type="button">복사</button></div>
+→ 프로덕션 DB의 최근 백업 작업이 실패(FAILED)한 이력 확인
+
+$ aws dlm get-lifecycle-policies
+[]
+→ EBS 스냅샷을 자동화하는 Data Lifecycle Manager 정책이 하나도 없어, AWS Backup 계획에 포함되지 않은 EC2 볼륨은 스냅샷이 전혀 남지 않는 상태</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.12.1-aws-crit" contenteditable="true">중요 자원(RDS·EBS·EFS)에 백업 계획(Backup Plan)이 연결되어 있지 않음, 최근 백업 Job이 FAILED 상태로 다수 존재, 백업 보관 리전이 운영 리전과 동일해 재해 시 동반 손실 위험</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.12.1-aws-fix" contenteditable="true">AWS Backup으로 전사 백업 정책을 RPO·RTO 기준에 맞게 표준화, Cross-Region Copy로 이중화, 정기 복구 테스트(Restore Test)를 수행하고 결과를 기록·보고</div></div>
@@ -1190,7 +1409,19 @@ az backup item list -g RESOURCE_GROUP --vault-name VAULT_NAME --query "[?propert
 az backup vault list --query "[].properties.storageType"</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
-              <div class="code-shell"><div class="code" data-key="2.12.1-azure-example" contenteditable="true">$ az backup vault list --query "[].properties.storageType"
+              <div class="code-shell"><div class="code" data-key="2.12.1-azure-example" contenteditable="true">$ az backup policy list -g rg-prod --vault-name vault-prod -o table
+Name             WorkloadType
+---------------  --------------
+DefaultPolicy     VM
+→ 기본 정책(DefaultPolicy) 하나만 존재해, 워크로드별로 세분화된 백업 주기·보존기간이 마련되어 있지 않음
+
+$ az backup item list -g rg-prod --vault-name vault-prod --query "[?properties.lastBackupStatus=='Failed']"
+[
+  { "name": "vm-app-01", "properties": { "lastBackupStatus": "Failed" } }
+]
+→ vm-app-01의 최근 백업이 Failed 상태로 남아있음
+
+$ az backup vault list --query "[].properties.storageType"
 [
   "LocallyRedundant"
 ]

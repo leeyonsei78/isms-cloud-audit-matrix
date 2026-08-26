@@ -1391,8 +1391,8 @@ az backup vault list --query "[].properties.storageType"</div><button class="cop
     // absolute point (style) + pixel (legacy width attribute) values, which
     // is what Word itself emits when it saves HTML — so we hardcode both
     // here instead of using %.
-    var TABLE_WIDTH_PT = 750, COL_WIDTH_PT = 375;
-    var TABLE_WIDTH_PX = 1000, COL_WIDTH_PX = 500;
+    var TABLE_WIDTH_PT = 720, COL_WIDTH_PT = 360;
+    var TABLE_WIDTH_PX = 960, COL_WIDTH_PX = 480;
     var colStyle = 'width:' + COL_WIDTH_PT + '.0pt';
 
     document.querySelectorAll('.domain').forEach(function (domainEl) {
@@ -1426,7 +1426,12 @@ az backup vault list --query "[].properties.storageType"</div><button class="cop
       '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>90</w:Zoom>' +
       '<w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->' +
       '<style>' +
-      '@page { size: 29.7cm 21cm; mso-page-orientation: landscape; margin: 1.6cm; }' +
+      // A bare "@page { ... }" rule is silently ignored by Word's HTML/DOC
+      // filter (it keeps its own default portrait page) — Word only honors
+      // page setup when the @page rule is named and paired with a matching
+      // "div.NAME { page: NAME; }" rule wrapping the body content.
+      '@page Section1 { size: 29.7cm 21cm; mso-page-orientation: landscape; margin: 1.6cm; }' +
+      'div.Section1 { page: Section1; }' +
       'body { font-family: "맑은 고딕", "Malgun Gothic", sans-serif; font-size: 10pt; color: #1a2230; }' +
       'h1 { font-size: 20pt; color: #0d4f4e; margin-bottom: 4pt; }' +
       '.w-lede { font-size: 10pt; color: #5b6572; margin-bottom: 16pt; }' +
@@ -1434,7 +1439,11 @@ az backup vault list --query "[].properties.storageType"</div><button class="cop
       'h3 { font-size: 12pt; margin: 14pt 0 3pt; }' +
       '.w-badge { font-family: Consolas, monospace; font-size: 9pt; background: #eef1f5; border: 1pt solid #dbe1e9; padding: 1pt 5pt; }' +
       '.w-desc { font-size: 9.5pt; color: #5b6572; margin: 0 0 6pt; }' +
-      'table.w-matrix { border-collapse: collapse; margin-bottom: 12pt; table-layout: fixed; mso-table-layout-alt: fixed; }' +
+      // mso-table-layout-alt MUST stay out of this class rule: declaring it
+      // on a class selector (as opposed to the table's own inline style,
+      // where it's also set below) makes Word re-enable AutoFit-to-Contents
+      // instead of honoring it — verified empirically against Word 16.0.
+      'table.w-matrix { border-collapse: collapse; margin-bottom: 12pt; table-layout: fixed; }' +
       'table.w-matrix th, table.w-matrix td { border: 1pt solid #dbe1e9; padding: 6pt 8pt; vertical-align: top; overflow: hidden; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; }' +
       'table.w-matrix th { font-family: Consolas, monospace; font-size: 9pt; text-align: left; }' +
       '.w-th-aws { background: #f6ead9; color: #a15a20; }' +
@@ -1446,9 +1455,11 @@ az backup vault list --query "[].properties.storageType"</div><button class="cop
       '.w-fix { border-left: 3pt solid #326a41; background: #e3f0e6; padding: 5pt 7pt; font-size: 9pt; word-wrap: break-word; }' +
       '</style></head>' +
       '<body>' +
+      '<div class="Section1">' +
       '<h1>' + escapeHtml(title) + '</h1>' +
       '<p class="w-lede">' + escapeHtml(lede) + '</p>' +
       body +
+      '</div>' +
       '</body></html>'
     );
   }

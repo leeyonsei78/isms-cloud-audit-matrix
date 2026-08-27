@@ -207,6 +207,7 @@
   }
   .btn.danger { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); }
   .export-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .export-buttons { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
   .export-status { font-size: 11.5px; color: var(--text-faint); min-height: 14px; }
 
   .note-bar {
@@ -354,7 +355,7 @@
   <div class="top-inner">
     <div class="eyebrow">ISMS-P · Cloud Infrastructure Audit</div>
     <h1>클라우드 ISMS 점검 매트릭스</h1>
-    <p class="lede">AWS·Azure 환경에서 ISMS(-P) 인증심사를 준비할 때 점검해야 할 인증기준 항목을 CLI 점검 명령어, 실행 예시 및 결과, 문제 판단 기준, 개선 방안 순으로 정리했습니다. "실행 예시 및 결과"에는 명령어에 실제 값(버킷명·인스턴스 ID 등)을 채운 예시와 그 결과로 나오는 출력이 함께 담겨 있어, 명령어를 처음 실행해 보는 담당자도 정상/비정상 상태를 바로 비교할 수 있습니다. 카드 안의 모든 텍스트는 직접 수정할 수 있고, 하단 버튼으로 CSV(Excel용) 파일로 내려받을 수 있습니다.</p>
+    <p class="lede">AWS·Azure 환경에서 ISMS(-P) 인증심사를 준비할 때 점검해야 할 인증기준 항목을 CLI 점검 명령어, 실행 예시 및 결과, 문제 판단 기준, 개선 방안 순으로 정리했습니다. "실행 예시 및 결과"에는 명령어에 실제 값(버킷명·인스턴스 ID 등)을 채운 예시와 그 결과로 나오는 출력이 함께 담겨 있어, 명령어를 처음 실행해 보는 담당자도 정상/비정상 상태를 바로 비교할 수 있습니다. 카드 안의 모든 텍스트는 직접 수정할 수 있고, 하단 버튼으로 CSV(Excel용) 또는 Word(.docx) 파일로 내려받을 수 있습니다.</p>
     <div class="stats">
       <span class="stat"><b>17</b>개 통제항목</span>
       <span class="stat"><b>7</b>개 인증기준 영역</span>
@@ -382,7 +383,10 @@
     <div class="spacer"></div>
     <button class="btn" id="resetBtn" type="button">편집 초기화</button>
     <div class="export-wrap">
-      <button class="btn primary" id="exportBtn" type="button" disabled>다운로드 준비 중…</button>
+      <div class="export-buttons">
+        <button class="btn primary" id="exportBtn" type="button" disabled>다운로드 준비 중…</button>
+        <button class="btn primary" id="exportDocxBtn" type="button" disabled>다운로드 준비 중…</button>
+      </div>
       <span class="export-status" id="exportStatus"></span>
     </div>
   </div>
@@ -1511,6 +1515,7 @@ $ az backup vault list --query "[].properties.storageType"
 
   // ---- CSV (Excel) export via downloads capability ----
   var exportBtn = document.getElementById('exportBtn');
+  var exportDocxBtn = document.getElementById('exportDocxBtn');
   var exportStatus = document.getElementById('exportStatus');
   var downloadsNS = null;
 
@@ -1586,8 +1591,8 @@ $ az backup vault list --query "[].properties.storageType"
 
   var standaloneMode = false;
 
-  function triggerBlobDownload(filename, content) {
-    var blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+  function triggerBlobDownload(filename, content, mimeType) {
+    var blob = new Blob([content], { type: mimeType || 'text/csv;charset=utf-8;' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
@@ -1596,6 +1601,174 @@ $ az backup vault list --query "[].properties.storageType"
     a.click();
     document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  // ---- minimal ZIP (store-only) writer, used to package the .docx (Open XML) file ----
+  var CRC32_TABLE = (function () {
+    var table = [];
+    for (var n = 0; n < 256; n++) {
+      var c = n;
+      for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      table[n] = c >>> 0;
+    }
+    return table;
+  })();
+
+  function crc32(bytes) {
+    var crc = 0xFFFFFFFF;
+    for (var i = 0; i < bytes.length; i++) {
+      crc = (crc >>> 8) ^ CRC32_TABLE[(crc ^ bytes[i]) & 0xFF];
+    }
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function le16(n) { return [n & 0xff, (n >> 8) & 0xff]; }
+  function le32(n) { return [n & 0xff, (n >> 8) & 0xff, (n >> 16) & 0xff, (n >>> 24) & 0xff]; }
+
+  function createZip(files) {
+    var encoder = new TextEncoder();
+    var localChunks = [];
+    var centralChunks = [];
+    var offset = 0;
+
+    files.forEach(function (file) {
+      var nameBytes = encoder.encode(file.name);
+      var data = file.data;
+      var crc = crc32(data);
+      var localHeader = []
+        .concat([0x50, 0x4b, 0x03, 0x04])
+        .concat(le16(20)).concat(le16(0)).concat(le16(0))
+        .concat(le16(0)).concat(le16(0))
+        .concat(le32(crc)).concat(le32(data.length)).concat(le32(data.length))
+        .concat(le16(nameBytes.length)).concat(le16(0));
+      var localHeaderBytes = new Uint8Array(localHeader);
+
+      localChunks.push(localHeaderBytes, nameBytes, data);
+
+      var centralHeader = []
+        .concat([0x50, 0x4b, 0x01, 0x02])
+        .concat(le16(20)).concat(le16(20)).concat(le16(0))
+        .concat(le16(0)).concat(le16(0)).concat(le16(0))
+        .concat(le32(crc)).concat(le32(data.length)).concat(le32(data.length))
+        .concat(le16(nameBytes.length)).concat(le16(0)).concat(le16(0))
+        .concat(le16(0)).concat(le16(0)).concat(le32(0))
+        .concat(le32(offset));
+      centralChunks.push(new Uint8Array(centralHeader), nameBytes);
+
+      offset += localHeaderBytes.length + nameBytes.length + data.length;
+    });
+
+    var centralStart = offset;
+    var centralSize = centralChunks.reduce(function (sum, c) { return sum + c.length; }, 0);
+    var eocd = new Uint8Array(
+      [0x50, 0x4b, 0x05, 0x06]
+        .concat(le16(0)).concat(le16(0))
+        .concat(le16(files.length)).concat(le16(files.length))
+        .concat(le32(centralSize)).concat(le32(centralStart))
+        .concat(le16(0))
+    );
+
+    var allChunks = localChunks.concat(centralChunks, [eocd]);
+    var totalLength = allChunks.reduce(function (sum, c) { return sum + c.length; }, 0);
+    var out = new Uint8Array(totalLength);
+    var pos = 0;
+    allChunks.forEach(function (chunk) { out.set(chunk, pos); pos += chunk.length; });
+    return out;
+  }
+
+  // ---- Word (.docx) export ----
+  function xmlEscape(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+  }
+
+  function docxParagraph(text, opts) {
+    opts = opts || {};
+    var rPr = '';
+    if (opts.bold) rPr += '<w:b/>';
+    if (opts.mono) rPr += '<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas" w:cs="Consolas"/>';
+    if (opts.size) rPr += '<w:sz w:val="' + (opts.size * 2) + '"/><w:szCs w:val="' + (opts.size * 2) + '"/>';
+    if (opts.color) rPr += '<w:color w:val="' + opts.color + '"/>';
+    var rPrXml = rPr ? '<w:rPr>' + rPr + '</w:rPr>' : '';
+    var pPr = '<w:pPr><w:spacing w:before="' + (opts.before != null ? opts.before : 60) + '" w:after="' + (opts.after != null ? opts.after : 60) + '"/></w:pPr>';
+    var lines = String(text || '').split('\n');
+    var runs = lines.map(function (line, i) {
+      var br = i < lines.length - 1 ? '<w:br/>' : '';
+      return '<w:r>' + rPrXml + '<w:t xml:space="preserve">' + xmlEscape(line) + '</w:t></w:r>' + br;
+    }).join('');
+    return '<w:p>' + pPr + runs + '</w:p>';
+  }
+
+  function buildDocxBody() {
+    var parts = [];
+    parts.push(docxParagraph('클라우드 ISMS 점검 매트릭스', { bold: true, size: 28, before: 0, after: 200 }));
+    parts.push(docxParagraph('AWS·Azure 클라우드 ISMS(-P) 인증심사 준비용 점검 명령어, 실행 예시 및 결과, 문제 판단 기준, 개선 방안 정리', { size: 10, color: '5b6572', after: 300 }));
+
+    document.querySelectorAll('.domain').forEach(function (domainEl) {
+      var domainId = domainEl.dataset.domainId;
+      var domainName = domainEl.dataset.domainName;
+      parts.push(docxParagraph(domainId + ' ' + domainName, { bold: true, size: 18, color: '0d4f4e', before: 300, after: 120 }));
+
+      domainEl.querySelectorAll('.card').forEach(function (card) {
+        var controlId = card.dataset.id;
+        var controlName = card.querySelector('.card-head h3').textContent;
+        var desc = card.querySelector('.card-desc').textContent;
+
+        parts.push(docxParagraph(controlId + ' ' + controlName, { bold: true, size: 14, before: 220, after: 60 }));
+        parts.push(docxParagraph(desc, { size: 10, after: 120 }));
+
+        ['aws', 'azure'].forEach(function (provider) {
+          var section = card.querySelector('.provider.' + provider);
+          if (!section) return;
+          var providerLabel = provider === 'aws' ? 'AWS' : 'Azure';
+          var cmd = section.querySelector('.field-cmd .code').textContent.trim();
+          var example = section.querySelector('.field-example .code').textContent.trim();
+          var crit = section.querySelector('.field-crit .field-text').textContent.trim();
+          var fix = section.querySelector('.field-fix .field-text').textContent.trim();
+
+          parts.push(docxParagraph(providerLabel, { bold: true, size: 12, before: 160, after: 40 }));
+          parts.push(docxParagraph('점검 명령어', { bold: true, size: 9, color: '5b6572', before: 60, after: 20 }));
+          parts.push(docxParagraph(cmd, { mono: true, size: 9, before: 0, after: 100 }));
+          parts.push(docxParagraph('실행 예시 및 결과', { bold: true, size: 9, color: '5b6572', before: 60, after: 20 }));
+          parts.push(docxParagraph(example, { mono: true, size: 9, before: 0, after: 100 }));
+          parts.push(docxParagraph('문제 판단 기준', { bold: true, size: 9, color: '5b6572', before: 60, after: 20 }));
+          parts.push(docxParagraph(crit, { size: 10, before: 0, after: 100 }));
+          parts.push(docxParagraph('개선 방안', { bold: true, size: 9, color: '5b6572', before: 60, after: 20 }));
+          parts.push(docxParagraph(fix, { size: 10, before: 0, after: 100 }));
+        });
+      });
+    });
+
+    return parts.join('');
+  }
+
+  function buildDocxBytes() {
+    var encoder = new TextEncoder();
+    var body = buildDocxBody();
+
+    var documentXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:body>' + body + '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/></w:sectPr></w:body>' +
+      '</w:document>';
+
+    var contentTypesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+      '<Default Extension="xml" ContentType="application/xml"/>' +
+      '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+      '</Types>';
+
+    var rootRelsXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+      '</Relationships>';
+
+    return createZip([
+      { name: '[Content_Types].xml', data: encoder.encode(contentTypesXml) },
+      { name: '_rels/.rels', data: encoder.encode(rootRelsXml) },
+      { name: 'word/document.xml', data: encoder.encode(documentXml) }
+    ]);
   }
 
   (async function initDownloads() {
@@ -1607,6 +1780,8 @@ $ az backup vault list --query "[].properties.storageType"
     if (!downloadsNS) standaloneMode = true;
     exportBtn.disabled = false;
     exportBtn.textContent = 'CSV로 내보내기 (Excel용)';
+    exportDocxBtn.disabled = false;
+    exportDocxBtn.textContent = 'Word로 내보내기 (.docx)';
   })();
 
   exportBtn.addEventListener('click', async function () {
@@ -1633,8 +1808,45 @@ $ az backup vault list --query "[].properties.storageType"
 
     if (standaloneMode) {
       try {
-        triggerBlobDownload(filename, csv);
+        triggerBlobDownload(filename, csv, 'text/csv;charset=utf-8;');
         exportStatus.textContent = '다운로드 완료 · Excel에서 열어 확인하세요.';
+      } catch (e) {
+        exportStatus.textContent = '다운로드에 실패했습니다. 브라우저의 다운로드 차단 설정을 확인해 주세요.';
+      }
+    }
+  });
+
+  var DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+  exportDocxBtn.addEventListener('click', async function () {
+    var prevLabel = exportDocxBtn.textContent;
+    exportStatus.textContent = '';
+    var bytes = buildDocxBytes();
+    var filename = 'ISMS_AWS_Azure_Cloud_Audit_Matrix.docx';
+
+    if (downloadsNS) {
+      exportDocxBtn.disabled = true;
+      exportDocxBtn.textContent = '내보내는 중…';
+      try {
+        var binary = '';
+        for (var i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+        var base64 = btoa(binary);
+        await downloadsNS.save({ filename: filename, data: base64, encoding: 'base64' });
+        exportStatus.textContent = '다운로드 완료 · Word에서 열어 확인하세요.';
+      } catch (err) {
+        var code = err && err.code;
+        exportStatus.textContent = ERROR_MESSAGES[code] || '다운로드에 실패했습니다.';
+      } finally {
+        exportDocxBtn.disabled = false;
+        exportDocxBtn.textContent = prevLabel;
+      }
+      return;
+    }
+
+    if (standaloneMode) {
+      try {
+        triggerBlobDownload(filename, bytes, DOCX_MIME);
+        exportStatus.textContent = '다운로드 완료 · Word에서 열어 확인하세요.';
       } catch (e) {
         exportStatus.textContent = '다운로드에 실패했습니다. 브라우저의 다운로드 차단 설정을 확인해 주세요.';
       }

@@ -319,10 +319,38 @@
     </div>
   </section>
 
+  <!-- ================= PROD / STAGE / TEST 구분 기준 ================= -->
+  <section>
+    <div class="section-head">
+      <div class="section-kicker">02 · Environment</div>
+      <h2>운영·Stage·Test는 무엇으로 구분해야 하는가</h2>
+      <p class="section-desc">"환경을 나눈다"는 계정만 3개 만드는 것이 아닙니다. 아래 9가지 기준을 모두 다르게 적용해야 환경 분리가 실제로 작동합니다.</p>
+    </div>
+    <div class="table-scroll">
+      <table class="cmp">
+        <caption>Production · Stage · Test/Dev 환경별 구분 기준</caption>
+        <thead>
+          <tr><th>구분 기준</th><th>Production</th><th>Stage</th><th>Test / Dev</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="cat">계정/구독</td><td class="role">전용 Account/Subscription</td><td class="role">별도 Account/Subscription(Prod와 Peering 없음)</td><td class="role">별도 Account/Subscription(Prod 데이터 접근 원천 차단)</td></tr>
+          <tr><td class="cat">네트워크</td><td class="role">전용 VPC/VNet · Multi-AZ 이중화</td><td class="role">별도 VPC/VNet · 축소 구성</td><td class="role">별도 VPC/VNet · 최소 구성</td></tr>
+          <tr><td class="cat">데이터</td><td class="role"><b style="color:var(--sec)">실 개인신용정보(원본)</b></td><td class="role">마스킹·익명화 데이터</td><td class="role">더미/샘플 데이터만</td></tr>
+          <tr><td class="cat">DB 인스턴스·키</td><td class="role">전용 인스턴스 + 전용 암호화 키(고가용성)</td><td class="role">별도 인스턴스 + 별도 키(단일 AZ 가능)</td><td class="role">별도 인스턴스 + 별도 키(최소 사양)</td></tr>
+          <tr><td class="cat">접근 권한</td><td class="role">최소 인원 + PAM 승인 필수(Tier 1)</td><td class="role">운영·QA팀 제한적 접근</td><td class="role">개발자 자율 접근(계정 내부)</td></tr>
+          <tr><td class="cat">변경관리</td><td class="role">변경관리위원회 사전승인 필수</td><td class="role">표준 변경 절차(경량 승인)</td><td class="role">자유 배포(CI/CD, 승인 불요)</td></tr>
+          <tr><td class="cat">모니터링·로그</td><td class="role">상시 실시간 관제 + 장기 보존(2년 이상)</td><td class="role">배포 검증용 모니터링 + 단기 보존</td><td class="role">기본 로그만, 단기 보존(30일 등)</td></tr>
+          <tr><td class="cat">태그/명명규칙</td><td class="role"><span class="pill enc" style="padding:1px 6px">env=prod</span> 필수 태깅</td><td class="role"><span class="pill enc" style="padding:1px 6px">env=stage</span> 필수 태깅</td><td class="role"><span class="pill enc" style="padding:1px 6px">env=dev/test</span> 필수 태깅</td></tr>
+          <tr><td class="cat">규모(Sizing)</td><td class="role">운영 트래픽 기준 풀 사이즈</td><td class="role">Prod 대비 축소 가능</td><td class="role">최소 사이즈</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
   <!-- ================= MAIN DIAGRAM ================= -->
   <section>
     <div class="section-head">
-      <div class="section-kicker">02 · Architecture</div>
+      <div class="section-kicker">03 · Architecture</div>
       <h2>전체 구성도 — AWS · Azure 나란히 비교</h2>
       <p class="section-desc">왼쪽은 AWS, 오른쪽은 Azure로 동일한 구조를 같은 높이에 배치했습니다. 가운데 점선 칸은 그 줄에서 서로 대응하는 서비스 명칭입니다. 계열사 A는 전 구간(Web·WAS·DB·관리 Zone과 보안장비)을 상세히, 계열사 A의 Stage/Test와 계열사 B는 동일 패턴을 축약해 표시했습니다.</p>
     </div>
@@ -404,26 +432,26 @@
             <div class="item-row"><span class="pill co-a">VPC 10.10.0.0/16</span><span class="pill">Multi-AZ 이중화</span><span class="pill">전용 VIF(Virtual Interface) A</span></div>
             <div class="zone-stack">
               <div class="zone-row">
-                <div class="zhead"><span class="zone-label">Web Zone</span><span class="zone-svc">ALB(내부) + EC2 웹서버</span></div>
+                <div class="zhead"><span class="zone-label">Web Zone(Subnet)</span><span class="zone-svc">ALB(내부) + EC2 웹서버</span></div>
                 <div class="item-row"><span class="pill sec">AWS WAF</span><span class="pill sec">Security Group</span><span class="pill sec">Network Firewall(IPS)</span></div>
               </div>
               <div class="zone-arrow">↓ 이 계층만 통과 (계층 건너뛰기 차단)</div>
               <div class="zone-row">
-                <div class="zhead"><span class="zone-label">WAS Zone</span><span class="zone-svc">EC2 / ECS 애플리케이션 서버</span></div>
+                <div class="zhead"><span class="zone-label">WAS Zone(Subnet)</span><span class="zone-svc">EC2 / ECS 애플리케이션 서버</span></div>
                 <div class="item-row"><span class="pill sec">Session Manager(서버접근통제)</span><span class="pill sec">백신 Agent</span><span class="pill sec">DAM Agent(쿼리 감사)</span></div>
               </div>
               <div class="zone-arrow">↓</div>
               <div class="zone-row db">
-                <div class="zhead"><span class="zone-label">DB Zone · 개인신용정보</span><span class="zone-svc">Amazon Aurora(회사 A 전용 인스턴스)</span></div>
+                <div class="zhead"><span class="zone-label">DB Zone(Subnet) · 개인신용정보</span><span class="zone-svc">Amazon Aurora / RDS(회사 A 전용 인스턴스)</span></div>
                 <div class="item-row"><span class="pill enc">KMS CMK — A사 전용키</span><span class="pill sec">DAM(DB 접근통제)</span><span class="pill sec">컬럼 암호화</span></div>
               </div>
               <div class="zone-row">
-                <div class="zhead"><span class="zone-label">관리 Zone</span><span class="zone-svc">Bastion 연동 · 로그 Agent · Systems Manager</span></div>
-                <div class="item-row"><span class="pill sec">PAM 연동</span><span class="pill sec">CloudWatch Agent</span></div>
+                <div class="zhead"><span class="zone-label">관리 Zone(Subnet)</span><span class="zone-svc">Bastion 연동 · 로그 Agent · Systems Manager</span></div>
+                <div class="item-row"><span class="pill sec">PAM 연동</span><span class="pill sec">CloudWatch Agent</span><span class="pill sec">S3(로그·백업 저장)</span></div>
               </div>
             </div>
           </div>
-          <div class="spine-cell"><div class="spine-inner"><span class="t">네트워크</span><br>VPC ↔ VNet · SG ↔ NSG<br>ALB ↔ App Gateway<br>Aurora/RDS ↔ Azure SQL MI<br>KMS ↔ Key Vault · Session Manager ↔ Bastion</div></div>
+          <div class="spine-cell"><div class="spine-inner"><span class="t">네트워크</span><br>VPC ↔ VNet · Subnet ↔ Subnet<br>SG ↔ NSG · EC2 ↔ VM<br>ALB ↔ App Gateway<br>Aurora/RDS ↔ Azure SQL MI<br>S3 ↔ Blob Storage<br>KMS ↔ Key Vault · Session Manager ↔ Bastion</div></div>
           <div class="acct-box ca">
             <div class="acct-head">
               <span class="acct-name">계열사 A — Production Subscription</span>
@@ -432,22 +460,22 @@
             <div class="item-row"><span class="pill co-a">VNet 10.20.0.0/16</span><span class="pill">가용성 영역 이중화</span><span class="pill">전용 ExpressRoute Circuit A</span></div>
             <div class="zone-stack">
               <div class="zone-row">
-                <div class="zhead"><span class="zone-label">Web Zone</span><span class="zone-svc">Application Gateway(내부) + VM 웹서버</span></div>
+                <div class="zhead"><span class="zone-label">Web Zone(Subnet)</span><span class="zone-svc">Application Gateway(내부) + VM 웹서버</span></div>
                 <div class="item-row"><span class="pill sec">Azure WAF</span><span class="pill sec">NSG</span><span class="pill sec">Azure Firewall(IPS)</span></div>
               </div>
               <div class="zone-arrow">↓ 이 계층만 통과 (계층 건너뛰기 차단)</div>
               <div class="zone-row">
-                <div class="zhead"><span class="zone-label">WAS Zone</span><span class="zone-svc">VM / App Service 애플리케이션 서버</span></div>
+                <div class="zhead"><span class="zone-label">WAS Zone(Subnet)</span><span class="zone-svc">VM / App Service 애플리케이션 서버</span></div>
                 <div class="item-row"><span class="pill sec">Azure Bastion(서버접근통제)</span><span class="pill sec">백신 Agent</span><span class="pill sec">DAM Agent(쿼리 감사)</span></div>
               </div>
               <div class="zone-arrow">↓</div>
               <div class="zone-row db">
-                <div class="zhead"><span class="zone-label">DB Zone · 개인신용정보</span><span class="zone-svc">Azure SQL Managed Instance(회사 A 전용 인스턴스)</span></div>
+                <div class="zhead"><span class="zone-label">DB Zone(Subnet) · 개인신용정보</span><span class="zone-svc">Azure SQL Managed Instance(회사 A 전용 인스턴스)</span></div>
                 <div class="item-row"><span class="pill enc">Key Vault Key — A사 전용키</span><span class="pill sec">DAM(DB 접근통제)</span><span class="pill sec">Always Encrypted</span></div>
               </div>
               <div class="zone-row">
-                <div class="zhead"><span class="zone-label">관리 Zone</span><span class="zone-svc">Bastion 연동 · 로그 Agent · Update Manager</span></div>
-                <div class="item-row"><span class="pill sec">PAM 연동</span><span class="pill sec">Azure Monitor Agent</span></div>
+                <div class="zhead"><span class="zone-label">관리 Zone(Subnet)</span><span class="zone-svc">Bastion 연동 · 로그 Agent · Update Manager</span></div>
+                <div class="item-row"><span class="pill sec">PAM 연동</span><span class="pill sec">Azure Monitor Agent</span><span class="pill sec">Blob Storage(로그·백업 저장)</span></div>
               </div>
             </div>
           </div>
@@ -490,7 +518,7 @@
             <div class="acct-head"><span class="acct-name">계열사 B — Account 그룹</span></div>
             <div class="item-row"><span class="pill co-b">전용 VIF(Virtual Interface) B</span><span class="pill">A사와 동일 Zone 구조 반복</span></div>
             <div class="env-cards-wrap">
-              <div class="env-card"><div class="acct-head"><span class="acct-name" style="font-size:12.5px">Production</span><span class="env-tag prod">PROD</span></div><div class="mini-bar"><span class="w1"></span><span class="w2"></span><span class="w3"></span></div><div class="env-note">Web/WAS/DB/관리 4-Zone 전체 구성 · DB: Aurora(B사 전용) + <span class="pill enc" style="padding:1px 6px">KMS B사 전용키</span></div></div>
+              <div class="env-card"><div class="acct-head"><span class="acct-name" style="font-size:12.5px">Production</span><span class="env-tag prod">PROD</span></div><div class="mini-bar"><span class="w1"></span><span class="w2"></span><span class="w3"></span></div><div class="env-note">VPC + Subnet 4-Zone · EC2(Web/WAS) · DB: Aurora/RDS(B사 전용) + <span class="pill enc" style="padding:1px 6px">KMS B사 전용키</span> · S3(로그·백업)</div></div>
               <div class="env-card"><div class="acct-head"><span class="acct-name" style="font-size:12.5px">Stage</span><span class="env-tag stage">STAGE</span></div><div class="mini-bar"><span class="w1"></span><span class="w2"></span><span class="w3"></span></div><div class="env-note">별도 VPC · 마스킹 데이터 · 별도 DB 인스턴스/키</div></div>
               <div class="env-card"><div class="acct-head"><span class="acct-name" style="font-size:12.5px">Test</span><span class="env-tag test">TEST</span></div><div class="mini-bar"><span class="w1"></span><span class="w2"></span><span class="w3"></span></div><div class="env-note">Prod 데이터 접근 차단 · 별도 DB 인스턴스/키</div></div>
             </div>
@@ -500,7 +528,7 @@
             <div class="acct-head"><span class="acct-name">계열사 B — Subscription 그룹</span></div>
             <div class="item-row"><span class="pill co-b">전용 ExpressRoute Circuit B</span><span class="pill">A사와 동일 Zone 구조 반복</span></div>
             <div class="env-cards-wrap">
-              <div class="env-card"><div class="acct-head"><span class="acct-name" style="font-size:12.5px">Production</span><span class="env-tag prod">PROD</span></div><div class="mini-bar"><span class="w1"></span><span class="w2"></span><span class="w3"></span></div><div class="env-note">Web/WAS/DB/관리 4-Zone 전체 구성 · DB: Azure SQL MI(B사 전용) + <span class="pill enc" style="padding:1px 6px">Key Vault B사 전용키</span></div></div>
+              <div class="env-card"><div class="acct-head"><span class="acct-name" style="font-size:12.5px">Production</span><span class="env-tag prod">PROD</span></div><div class="mini-bar"><span class="w1"></span><span class="w2"></span><span class="w3"></span></div><div class="env-note">VNet + Subnet 4-Zone · VM(Web/WAS) · DB: Azure SQL MI(B사 전용) + <span class="pill enc" style="padding:1px 6px">Key Vault B사 전용키</span> · Blob Storage(로그·백업)</div></div>
               <div class="env-card"><div class="acct-head"><span class="acct-name" style="font-size:12.5px">Stage</span><span class="env-tag stage">STAGE</span></div><div class="mini-bar"><span class="w1"></span><span class="w2"></span><span class="w3"></span></div><div class="env-note">별도 VNet · 마스킹 데이터 · 별도 DB 인스턴스/키</div></div>
               <div class="env-card"><div class="acct-head"><span class="acct-name" style="font-size:12.5px">Test</span><span class="env-tag test">TEST</span></div><div class="mini-bar"><span class="w1"></span><span class="w2"></span><span class="w3"></span></div><div class="env-note">Prod 데이터 접근 차단 · 별도 DB 인스턴스/키</div></div>
             </div>
@@ -518,7 +546,7 @@
   <!-- ================= COMMON NETWORK FIGURE ================= -->
   <section>
     <div class="section-head">
-      <div class="section-kicker">03 · Common Network</div>
+      <div class="section-kicker">04 · Common Network</div>
       <h2>계열사 공통망 ↔ 계열사망 연결도</h2>
       <p class="section-desc">계열사망은 서로 직접 연결되지 않습니다. 모든 계열사망은 <b>그룹 공통망(Common Network Zone)</b> 하나만을 거쳐 본사·다른 계열사·인터넷과의 관계를 맺으며, 공통망의 라우팅 테이블 자체에 계열사 간 경로가 존재하지 않도록 구성합니다.</p>
     </div>
@@ -606,7 +634,7 @@
   <!-- ================= TERM MAPPING TABLE ================= -->
   <section>
     <div class="section-head">
-      <div class="section-kicker">04 · Terminology</div>
+      <div class="section-kicker">05 · Terminology</div>
       <h2>AWS ↔ Azure 명칭 비교표</h2>
       <p class="section-desc">위 구성도에서 같은 줄에 배치된 요소들의 정식 서비스명입니다. 제안서·심사 대응 문서 작성 시 그대로 인용할 수 있습니다.</p>
     </div>
@@ -621,6 +649,8 @@
           <tr><td class="cat">그룹 거버넌스</td><td class="aws-cell">Organizations + SCP</td><td class="azure-cell">Management Group + Azure Policy</td><td class="role">계열사 전체에 폐쇄망·태깅 등 가드레일 강제 배포</td></tr>
           <tr><td class="cat">가상 네트워크</td><td class="aws-cell">VPC</td><td class="azure-cell">VNet</td><td class="role">회사별 네트워크 격리 단위</td></tr>
           <tr><td class="cat">네트워크 Zone</td><td class="aws-cell">Subnet</td><td class="azure-cell">Subnet</td><td class="role">Web / WAS / DB / 관리 계층 분리</td></tr>
+          <tr><td class="cat">컴퓨팅 인스턴스</td><td class="aws-cell">EC2</td><td class="azure-cell">Virtual Machine(VM)</td><td class="role">Web·WAS Zone의 서버 컴퓨팅 자원</td></tr>
+          <tr><td class="cat">로드밸런서</td><td class="aws-cell">ALB(Application Load Balancer)</td><td class="azure-cell">Application Gateway</td><td class="role">Web Zone 내부 트래픽 분산</td></tr>
           <tr><td class="cat">인스턴스 방화벽</td><td class="aws-cell">Security Group</td><td class="azure-cell">NSG(Network Security Group)</td><td class="role">서버 단위 최소권한 통신 규칙</td></tr>
           <tr><td class="cat">전용회선</td><td class="aws-cell">Direct Connect</td><td class="azure-cell">ExpressRoute</td><td class="role">그룹 데이터센터 ↔ 클라우드 폐쇄 연결(인터넷 미경유)</td></tr>
           <tr><td class="cat">사내망 허브</td><td class="aws-cell">Transit Gateway</td><td class="azure-cell">Virtual WAN Hub</td><td class="role">계열사별 VPC/VNet을 하나의 허브로 집중 연결, 상호 라우팅 통제</td></tr>
@@ -647,7 +677,7 @@
   <!-- ================= ACCESS CONTROL FIGURE ================= -->
   <section>
     <div class="section-head">
-      <div class="section-kicker">05 · Access Control</div>
+      <div class="section-kicker">06 · Access Control</div>
       <h2>접근 통제 방안</h2>
       <p class="section-desc">관리자·운영자는 어떤 경우에도 서버·DB에 직접 접속할 수 없습니다. 반드시 망분리 전용단말 → 그룹 공통 Bastion → 대상 서버 순서를 거치며, DB는 별도로 DAM(DB 접근통제)을 한 번 더 경유합니다.</p>
     </div>
@@ -724,7 +754,7 @@
   <!-- ================= SECURITY APPLIANCE TABLE ================= -->
   <section>
     <div class="section-head">
-      <div class="section-kicker">06 · Personal Credit Information</div>
+      <div class="section-kicker">07 · Personal Credit Information</div>
       <h2>개인신용정보 보호를 위한 보안장비 배치</h2>
       <p class="section-desc">개인신용정보를 처리하는 시스템이므로 아래 보안 기능을 전 구간에 배치합니다. AWS·Azure 모두 동일한 배치 기준을 적용합니다.</p>
     </div>
@@ -753,7 +783,7 @@
   <!-- ================= NETWORK SEGMENTATION NOTE ================= -->
   <section>
     <div class="section-head">
-      <div class="section-kicker">07 · Network Segmentation</div>
+      <div class="section-kicker">08 · Network Segmentation</div>
       <h2>통신 구간 분리 원칙</h2>
     </div>
     <div class="criteria-grid">
@@ -779,7 +809,7 @@
   <!-- ================= SECURITY ZONE OPERATIONS ================= -->
   <section>
     <div class="section-head">
-      <div class="section-kicker">08 · Zone Operations</div>
+      <div class="section-kicker">09 · Zone Operations</div>
       <h2>보안 Zone 운영 방안</h2>
       <p class="section-desc">Zone은 그리는 것으로 끝나지 않습니다. Zone마다 등급(Tier)·운영주체·승인권자·점검주기를 명확히 정해야 실제로 유지됩니다. 아래는 이 구성도의 Zone에 적용하는 운영 기준입니다.</p>
     </div>
@@ -841,7 +871,7 @@
   <!-- ================= COMPLIANCE ================= -->
   <section>
     <div class="section-head">
-      <div class="section-kicker">09 · Compliance</div>
+      <div class="section-kicker">10 · Compliance</div>
       <h2>금융보안원 가이드라인 · 자체 위험평가(CSA) 준수</h2>
       <p class="section-desc">이 구성도는 「금융분야 클라우드컴퓨팅서비스 이용 가이드」(금융보안원), 전자금융감독규정, 「신용정보의 이용 및 보호에 관한 법률」의 요구를 반영하는 것을 전제로 하며, 실제 이용 전 아래 절차를 순서대로 거쳐야 합니다.</p>
     </div>

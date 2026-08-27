@@ -355,7 +355,7 @@
   <div class="top-inner">
     <div class="eyebrow">ISMS-P · Cloud Infrastructure Audit</div>
     <h1>클라우드 ISMS 점검 매트릭스</h1>
-    <p class="lede">AWS·Azure 환경에서 ISMS(-P) 인증심사를 준비할 때 점검해야 할 인증기준 항목을 CLI 점검 명령어, 실행 예시 및 결과, 문제 판단 기준, 개선 방안 순으로 정리했습니다. "실행 예시 및 결과"에는 명령어에 실제 값(버킷명·인스턴스 ID 등)을 채운 예시와 그 결과로 나오는 출력이 함께 담겨 있어, 명령어를 처음 실행해 보는 담당자도 정상/비정상 상태를 바로 비교할 수 있습니다. 카드 안의 모든 텍스트는 직접 수정할 수 있고, 하단 버튼으로 CSV(Excel용) 또는 Word(.docx) 파일로 내려받을 수 있습니다.</p>
+    <p class="lede">AWS·Azure 환경에서 ISMS(-P) 인증심사를 준비할 때 점검해야 할 인증기준 항목을 CLI 점검 명령어, 실행 예시 및 결과, 문제 판단 기준, 개선 방안 순으로 정리했습니다. "실행 예시 및 결과"에는 명령어에 실제 값(버킷명·인스턴스 ID 등)을 채운 예시와 그 결과로 나오는 출력이 함께 담겨 있어, 명령어를 처음 실행해 보는 담당자도 정상/비정상 상태를 바로 비교할 수 있습니다. 카드 안의 모든 텍스트는 직접 수정할 수 있고, 하단 버튼으로 CSV(Excel용) 파일로 내려받을 수 있습니다.</p>
     <div class="stats">
       <span class="stat"><b>17</b>개 통제항목</span>
       <span class="stat"><b>7</b>개 인증기준 영역</span>
@@ -385,7 +385,7 @@
     <div class="export-wrap">
       <div class="export-buttons">
         <button class="btn primary" id="exportBtn" type="button" disabled>다운로드 준비 중…</button>
-        <button class="btn primary" id="exportDocxBtn" type="button" disabled>다운로드 준비 중…</button>
+        <button class="btn primary" id="exportWordBtn" type="button" disabled>다운로드 준비 중…</button>
       </div>
       <span class="export-status" id="exportStatus"></span>
     </div>
@@ -424,8 +424,9 @@ aws iam list-users --query 'Users[*].[UserName,PasswordLastUsed]' --output table
 
 $ aws iam get-credential-report --query 'Content' --output text | base64 --decode
 user,arn,user_creation_time,password_enabled,password_last_used,mfa_active,access_key_1_active,access_key_1_last_used_date
-contractor-lee,arn:aws:iam::123456789012:user/contractor-lee,2023-01-10T00:00:00Z,true,N/A,false,true,N/A
-→ contractor-lee는 password_last_used가 N/A이고 mfa_active도 false로 확인됨(휴면 계정 의심)
+dev-kim,arn:aws:iam::123456789012:user/dev-kim,2025-01-10T00:00:00Z,true,2026-08-20T09:12:00Z,true,true,2026-08-25T10:03:00Z
+contractor-lee,arn:aws:iam::123456789012:user/contractor-lee,2024-03-02T00:00:00Z,true,N/A,false,true,2024-04-01T00:00:00Z
+→ contractor-lee는 password_last_used가 N/A(미사용)이고 mfa_active도 false, access_key도 2024년 이후 사용 이력이 없음
 
 $ aws iam list-users --query 'Users[*].[UserName,PasswordLastUsed]' --output table
 ---------------------------------------------------
@@ -435,7 +436,7 @@ $ aws iam list-users --query 'Users[*].[UserName,PasswordLastUsed]' --output tab
 |  ops-park        |  2025-11-02T03:45:11Z           |
 |  contractor-lee  |  None                           |
 +------------------+---------------------------------+
-→ contractor-lee는 PasswordLastUsed가 없어 사실상 미사용 계정</div><button class="copy-btn" type="button">복사</button></div>
+→ contractor-lee는 PasswordLastUsed가 없어 사실상 미사용 계정. credential report의 access_key_last_used도 함께 확인 필요</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.5.1-aws-crit" contenteditable="true">credential report의 password_last_used·access_key_last_used가 90일 이상이거나, 퇴사·전보자 계정이 Active 상태로 남아있음</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.5.1-aws-fix" contenteditable="true">90일 이상 미사용 IAM 사용자 비활성화·삭제, IAM Identity Center(SSO)로 개별 계정 최소화, 계정 발급·회수를 승인 이력이 남는 절차로 문서화</div></div>
@@ -484,9 +485,11 @@ aws iam get-credential-report --query 'Content' --output text | base64 --decode<
 
 $ aws iam list-virtual-mfa-devices
 {
-    "VirtualMFADevices": []
+    "VirtualMFADevices": [
+        { "SerialNumber": "arn:aws:iam::123456789012:mfa/ops-park", "User": { "UserName": "ops-park" } }
+    ]
 }
-→ 등록된 가상 MFA 디바이스가 하나도 없음
+→ 콘솔 로그인 권한이 있는 IAM 사용자가 여럿인데 가상 MFA가 등록된 사용자는 1명뿐
 
 $ aws iam get-credential-report --query 'Content' --output text | base64 --decode | grep -c ",false,"
 6
@@ -587,9 +590,10 @@ $ aws iam list-attached-user-policies --user-name dev-kim
 
 $ aws iam list-policies --scope Local --only-attached --query "Policies[*].PolicyName"
 [
-  "FullS3AndEC2Access"
+  "FullS3AdminPolicy",
+  "AllEC2Access"
 ]
-→ 조직에서 자체 작성한 정책도 세분화되지 않고 광범위한 권한으로 구성됨</div><button class="copy-btn" type="button">복사</button></div>
+→ 이름만으로는 권한 범위를 가늠하기 어려운 자체 제작(Customer Managed) 정책들이 다수의 사용자·역할에 연결되어 있어 별도 권한 범위 재검토 필요</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.5.5-aws-crit" contenteditable="true">root 계정으로 일상 업무(콘솔 로그인·API 호출) 이력 존재, 다수 사용자에게 AdministratorAccess 등 광범위한 권한이 그대로 부여됨</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.5.5-aws-fix" contenteditable="true">root는 최초 설정·비상시에만 사용하도록 절차화, 일상 관리 업무는 Assume Role 기반 IAM Role로 전환, 업무별 최소권한 Customer Managed Policy로 세분화</div></div>
@@ -630,9 +634,11 @@ aws iam list-access-keys --user-name USER_NAME
 aws accessanalyzer list-findings</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
-              <div class="code-shell"><div class="code" data-key="2.5.6-aws-example" contenteditable="true">$ aws iam get-credential-report --query 'Content' --output text | base64 --decode | awk -F, '{print $1,$9}'
-svc-batch AKIA****ABCD
-→ 액세스 키 발급 후 장기간 그대로 노출된 사용자 존재
+              <div class="code-shell"><div class="code" data-key="2.5.6-aws-example" contenteditable="true">$ aws iam get-credential-report --query 'Content' --output text | base64 --decode | awk -F',' '{print $1","$11}'
+user,access_key_1_last_used_date
+svc-batch,2024-01-15T00:00:00Z
+dev-kim,2026-08-25T10:03:00Z
+→ svc-batch 계정의 액세스 키가 2년 넘게 갱신·재검토되지 않고 그대로 사용 중
 
 $ aws iam list-access-keys --user-name svc-batch
 {
@@ -662,13 +668,13 @@ az role assignment list --all -o table</div><button class="copy-btn" type="butto
 [
   { "keyId": "a1b2c3d4...", "endDate": "2027-08-01T00:00:00Z" }
 ]
-→ 시크릿 만료일이 발급일 기준 3년 뒤로 설정(권장 180일 초과)
+→ 시크릿 만료일이 발급일 기준 3년 뒤로 설정(권장 180일 초과), 정기 Access Review 미구성
 
 $ az role assignment list --all -o table
-Principal                 Role
--------------------------  -------
-svc-integration-sp         Contributor
-→ 정기 Access Review가 구성되지 않아 서비스 프린시펄 권한이 장기간 재검토되지 않음</div><button class="copy-btn" type="button">복사</button></div>
+Principal                 Role         Scope
+-------------------------  -----------  ------------------------------
+svc-ci-pipeline             Contributor  /subscriptions/xxxx
+→ 마지막 Access Review 이후 6개월 넘게 재검토 기록이 없는 서비스 프린시펄에 Contributor 권한이 계속 유지되고 있음</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.5.6-azure-crit" contenteditable="true">서비스 프린시펄 시크릿 만료일이 1년 이상으로 설정되거나 이미 만료된 자격증명이 남아있음, 정기 Access Review가 구성되어 있지 않음</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.5.6-azure-fix" contenteditable="true">서비스 프린시펄은 관리 ID(Managed Identity) 또는 인증서로 전환, 부득이 시크릿 사용 시 수명을 180일 이하로 단축, Entra ID Access Reviews를 분기 단위로 자동화</div></div>
@@ -715,9 +721,11 @@ az network nsg rule list --nsg-name NSG_NAME -g RESOURCE_GROUP --query "[?source
             </div>
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
               <div class="code-shell"><div class="code" data-key="2.6.1-azure-example" contenteditable="true">$ az network nsg list -o table
-Name        ResourceGroup    Location
-----------  ---------------  ------------
-prod-nsg    rg-prod          koreacentral
+Name         ResourceGroup    Location
+-----------  ---------------  ------------
+prod-nsg      rg-prod          koreacentral
+legacy-nsg    rg-legacy        koreacentral
+→ legacy-nsg 등 소유 관계가 불분명한 오래된 NSG가 함께 존재해 규칙 관리 사각지대가 생길 수 있음
 
 $ az network nsg rule list --nsg-name prod-nsg -g rg-prod --query "[?sourceAddressPrefix=='*']"
 [
@@ -787,11 +795,11 @@ aws ec2 describe-nat-gateways --query "NatGateways[*].[NatGatewayId,State]"</div
 [
     [ { "DestinationCidrBlock": "0.0.0.0/0", "GatewayId": "igw-0123456789abcdef0" } ]
 ]
-→ DB 서브넷에 연결된 라우팅 테이블에도 인터넷 게이트웨이(IGW) 경로가 존재
+→ DB 서브넷에 연결된 라우팅 테이블에도 인터넷 게이트웨이(IGW) 경로가 존재(직접 인터넷 라우팅 가능)
 
 $ aws ec2 describe-nat-gateways --query "NatGateways[*].[NatGatewayId,State]"
 []
-→ NAT 게이트웨이가 하나도 없어 프라이빗 서브넷용 아웃바운드 경로 자체가 미구성</div><button class="copy-btn" type="button">복사</button></div>
+→ NAT Gateway가 하나도 없어, Private Subnet으로 분리해도 아웃바운드 경로를 별도로 통제할 수단이 없는 상태(2.6.1 보안그룹 아웃바운드 설정과 교차 확인 필요)</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.6.7-aws-crit" contenteditable="true">DB 등 민감 서브넷이 인터넷 게이트웨이(IGW)로 직접 라우팅되어 있음, 보안그룹 아웃바운드가 0.0.0.0/0 전면 허용 상태</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.6.7-aws-fix" contenteditable="true">민감 자원은 Private Subnet + NAT Gateway 구조로 전환, 아웃바운드도 필요한 목적지·포트로 제한, VPC Endpoint로 AWS 서비스 접근 시 인터넷 경유 최소화</div></div>
@@ -845,15 +853,14 @@ aws rds describe-db-instances --query 'DBInstances[?StorageEncrypted==`false`].D
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
               <div class="code-shell"><div class="code" data-key="2.7.1-aws-example" contenteditable="true">$ aws ec2 describe-volumes --query 'Volumes[?Encrypted==`false`].VolumeId'
 [ "vol-0a1b2c3d4e5f60789" ]
-→ 미암호화 EBS 볼륨 1개 확인
 
 $ aws s3api get-bucket-encryption --bucket legacy-uploads-bucket
 An error occurred (ServerSideEncryptionConfigurationNotFoundError) when calling the GetBucketEncryption operation
-→ 버킷 기본 암호화가 설정되지 않음
+→ 미암호화 EBS 볼륨 1개, 기본 암호화가 설정되지 않은 S3 버킷 확인
 
 $ aws rds describe-db-instances --query 'DBInstances[?StorageEncrypted==`false`].DBInstanceIdentifier'
 [ "legacy-mysql-01" ]
-→ 암호화가 적용되지 않은 RDS 인스턴스 확인</div><button class="copy-btn" type="button">복사</button></div>
+→ 스토리지 암호화가 적용되지 않은 RDS 인스턴스 1개 확인(생성 시점에만 지정 가능하므로 기존 인스턴스는 암호화된 스냅샷으로 재생성 필요)</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.7.1-aws-crit" contenteditable="true">EBS 볼륨·RDS·S3 버킷 중 암호화가 적용되지 않은 자원이 존재(특히 개인정보·중요정보 저장소), get-bucket-encryption 조회 시 NoSuchEncryption 오류 반환</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.7.1-aws-fix" contenteditable="true">계정 단위 EBS 기본 암호화 활성화, S3 기본 암호화(SSE-S3·SSE-KMS)를 강제하고 버킷 정책으로 미암호화 업로드 거부, RDS는 스냅샷 복사 후 암호화 옵션으로 재생성</div></div>
@@ -867,21 +874,21 @@ az sql db tde show -g RESOURCE_GROUP -s SQL_SERVER -n DB_NAME</div><button class
             </div>
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
               <div class="code-shell"><div class="code" data-key="2.7.1-azure-example" contenteditable="true">$ az disk list --query "[?encryption.type=='EncryptionAtRestWithPlatformKey']" -o table
-Name           EncryptionType
--------------  --------------------------------
-disk-app-01    EncryptionAtRestWithPlatformKey
-→ 플랫폼 기본 키만 적용되어 있음(고객관리키 미적용)
+Name              ResourceGroup
+----------------  ---------------
+disk-legacy-app    rg-legacy
+→ 플랫폼 관리형 키로만 암호화된 디스크가 존재. 규제상 고객관리키(CMK)가 필요한 자원인지 별도 확인 필요
 
-$ az storage account show -n stprodfiles --query "encryption"
+$ az storage account show -n stlegacyapp --query "encryption"
 {
   "keySource": "Microsoft.Storage",
   "requireInfrastructureEncryption": null
 }
-→ 규제상 CMK가 요구되는 스토리지 계정이 플랫폼 기본 암호화만 사용 중
+→ Storage Account가 기본 서비스 암호화만 적용되어 있고 고객관리키(CMK)는 미적용
 
 $ az sql db tde show -g rg-prod -s sql-prod-01 -n customerdb --query "status"
 "Disabled"
-→ 고객 데이터베이스의 TDE가 비활성화 상태</div><button class="copy-btn" type="button">복사</button></div>
+→ 고객 데이터베이스의 투명한 데이터 암호화(TDE)가 비활성화 상태</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.7.1-azure-crit" contenteditable="true">SQL Database의 TDE(투명한 데이터 암호화)가 Disabled 상태, 규제상 고객관리키(CMK)가 요구되는 자원에 플랫폼 기본 키만 적용되어 있음</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.7.1-azure-fix" contenteditable="true">비활성화된 DB의 TDE 즉시 재활성화, 규제상 요구되는 자원은 Key Vault 연동 Customer-Managed Key로 전환, Storage Service Encryption 적용 여부 상시 확인</div></div>
@@ -904,9 +911,11 @@ aws kms get-key-policy --key-id KEY_ID --policy-name default</div><button class=
               <div class="code-shell"><div class="code" data-key="2.7.2-aws-example" contenteditable="true">$ aws kms list-keys
 {
     "Keys": [
-        { "KeyId": "1234abcd-12ab-34cd-56ef-1234567890ab" }
+        { "KeyId": "1234abcd-12ab-34cd-56ef-1234567890ab" },
+        { "KeyId": "9f8e7d6c-5b4a-3210-9988-776655443322" }
     ]
 }
+→ 계정에 등록된 KMS 키 2건 확인, 각 키의 로테이션·정책을 개별 점검 필요
 
 $ aws kms get-key-rotation-status --key-id 1234abcd-12ab-34cd-56ef-1234567890ab
 {
@@ -914,9 +923,11 @@ $ aws kms get-key-rotation-status --key-id 1234abcd-12ab-34cd-56ef-1234567890ab
 }
 → 고객관리형 키(CMK)의 자동 로테이션이 비활성화되어 있음
 
-$ aws kms get-key-policy --key-id 1234abcd-12ab-34cd-56ef-1234567890ab --policy-name default --query Policy --output text
-{"Statement":[{"Effect":"Allow","Principal":{"AWS":"*"},"Action":"kms:*"}]}
-→ 키 정책의 Principal이 계정 전체(*)로 과도하게 넓게 허용되어 있음</div><button class="copy-btn" type="button">복사</button></div>
+$ aws kms get-key-policy --key-id 1234abcd-12ab-34cd-56ef-1234567890ab --policy-name default
+{
+    "Policy": "{\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"*\"},\"Action\":\"kms:*\"}]}"
+}
+→ 키 정책의 Principal이 "*"(계정 내 모든 사용자)로 과도하게 넓게 허용되어 있음</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.7.2-aws-crit" contenteditable="true">고객관리형 키(CMK)의 자동 로테이션이 비활성화, 키 정책의 Principal이 과도하게 넓게(예: 계정 전체 또는 *) 허용되어 있음</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.7.2-aws-fix" contenteditable="true">KMS 키 자동 로테이션(연 1회) 활성화, 키 정책을 특정 Role·서비스로 최소권한화, CloudTrail 데이터 이벤트로 키 사용 이력 감사</div></div>
@@ -930,15 +941,17 @@ az keyvault show --name KEYVAULT_NAME --query "properties.{purgeProtection:enabl
             </div>
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
               <div class="code-shell"><div class="code" data-key="2.7.2-azure-example" contenteditable="true">$ az keyvault list -o table
-Name             ResourceGroup
----------------  ---------------
-kv-prod-secrets  rg-prod
+Name              ResourceGroup    Location
+----------------  ---------------  ------------
+kv-prod-secrets    rg-prod          koreacentral
+kv-legacy          rg-legacy        koreacentral
+→ kv-legacy 등 사용처가 불분명한 Key Vault가 함께 존재, 소유자·용도 확인 필요
 
 $ az keyvault key list --vault-name kv-prod-secrets --query "[].{name:name,expires:attributes.expires}"
 [
-  { "name": "db-master-key", "expires": null }
+  { "name": "app-encryption-key", "expires": null }
 ]
-→ 키에 만료일(expiry)이 설정되지 않아 무기한 사용 중
+→ 키에 만료일(expires)이 설정되지 않아 무기한 사용 중
 
 $ az keyvault show --name kv-prod-secrets --query "properties.{purgeProtection:enablePurgeProtection,softDelete:enableSoftDelete}"
 {
@@ -986,16 +999,17 @@ aws cloudtrail get-event-selectors --trail-name TRAIL_NAME</div><button class="c
 $ aws cloudtrail get-trail-status --name main-trail
 {
     "IsLogging": true,
-    "LatestDeliveryTime": "2026-08-26T01:00:00Z"
+    "LatestDeliveryTime": "2026-08-26T13:00:00Z"
 }
+→ 트레일은 정상적으로 로깅 중이나, 위 결과처럼 단일 리전 트레일이라 로그 수집 범위 자체가 제한적
 
 $ aws cloudtrail get-event-selectors --trail-name main-trail
 {
     "EventSelectors": [
-        { "ReadWriteType": "ReadOnly", "IncludeManagementEvents": true }
+        { "ReadWriteType": "WriteOnly", "IncludeManagementEvents": true, "DataResources": [] }
     ]
 }
-→ 쓰기(Write) 이벤트가 기록되지 않아 리소스 변경 이력 추적 불가</div><button class="copy-btn" type="button">복사</button></div>
+→ 관리 이벤트는 기록되지만 S3·Lambda 등 데이터 이벤트(DataResources)는 수집 설정이 비어 있어 세부 접근 기록이 남지 않음</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.9.4-aws-crit" contenteditable="true">CloudTrail이 일부 리전에서 비활성화되어 있거나 IsMultiRegionTrail이 false, 로그 보관 기간이 법정 요구(접속기록 2년 이상 등)에 미달</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.9.4-aws-fix" contenteditable="true">전 리전 CloudTrail 활성화 및 Organizations 단위 통합 추적 구성, S3 로그 버킷에 수명주기 정책으로 법정 보관기간 이상 보존, CloudWatch Logs 연동으로 실시간 모니터링</div></div>
@@ -1010,17 +1024,19 @@ az monitor activity-log list --start-time 2026-05-01</div><button class="copy-bt
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
               <div class="code-shell"><div class="code" data-key="2.9.4-azure-example" contenteditable="true">$ az monitor diagnostic-settings list --resource /subscriptions/xxxx/resourceGroups/rg-prod/providers/Microsoft.Sql/servers/sql-prod-01
 []
-→ 핵심 SQL 서버에 진단 설정이 구성되지 않아 로그 미수집
+→ 핵심 SQL 서버에 진단 설정(Diagnostic Settings)이 구성되지 않아 로그가 수집되지 않음
 
 $ az monitor log-analytics workspace list -o table
-Name          ResourceGroup    RetentionInDays
-------------  ---------------  -----------------
-law-central   rg-monitor       90
-→ Activity Log 보존기간이 기본값(90일)에 그쳐 법정 보관기간(예: 2년) 미달
+Name       ResourceGroup    RetentionInDays
+---------  ---------------  -----------------
+law-prod    rg-prod          30
+→ Log Analytics Workspace 보존기간이 기본값 30일로 짧게 설정되어 있어 장기 조회·법정 보관 요건 충족이 어려움
 
 $ az monitor activity-log list --start-time 2026-05-01 --query "[?operationName.value=='Microsoft.Authorization/roleAssignments/write']"
-[]
-→ 조회 기간 내 권한 변경 이벤트 자체가 수집되지 않음(보존기간 밖으로 유실됐을 가능성)</div><button class="copy-btn" type="button">복사</button></div>
+[
+  { "caller": "kim.admin@contoso.com", "eventTimestamp": "2026-05-14T02:11:00Z" }
+]
+→ 권한 변경(roleAssignments/write) 이력 자체는 조회되나, 이를 정기적으로 검토하는 절차가 확인되지 않음</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.9.4-azure-crit" contenteditable="true">핵심 리소스(구독, 주요 VM·DB)에 진단 설정(Diagnostic Settings)이 구성되지 않아 로그가 수집되지 않음, Activity Log 보존기간이 기본값(90일)에 그쳐 법정 보관기간 미달</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.9.4-azure-fix" contenteditable="true">전 구독·핵심 리소스에 Diagnostic Settings를 Log Analytics·Storage Account로 연동, Storage 수명주기 정책으로 장기보관(2년 이상), Azure Policy(Deploy if not exists)로 진단설정 강제</div></div>
@@ -1044,15 +1060,13 @@ aws s3api get-public-access-block --bucket LOG_BUCKET</div><button class="copy-b
 false
 → 로그파일 무결성 검증(SHA-256 다이제스트 서명)이 비활성화 상태
 
-$ aws s3api get-bucket-policy --bucket log-archive-bucket
-{
-    "Policy": "{\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::123456789012:role/AdminRole\"},\"Action\":\"s3:DeleteObject\"}]}"
-}
-→ 일반 관리자 Role에 로그 버킷 객체 삭제 권한이 부여되어 있음
+$ aws s3api get-bucket-policy --bucket main-trail-logs
+An error occurred (NoSuchBucketPolicy) when calling the GetBucketPolicy operation: The bucket policy does not exist
+→ 로그 버킷에 별도 정책이 없어 IAM 권한만 있으면 누구나 접근 가능한 상태(추가 제한 없음)
 
-$ aws s3api get-public-access-block --bucket log-archive-bucket
+$ aws s3api get-public-access-block --bucket main-trail-logs
 An error occurred (NoSuchPublicAccessBlockConfiguration) when calling the GetPublicAccessBlock operation
-→ 퍼블릭 접근 차단 설정 자체가 구성되어 있지 않음</div><button class="copy-btn" type="button">복사</button></div>
+→ Public Access Block 설정 자체가 없어, 버킷 정책·ACL 설정 실수 시 로그가 외부에 노출될 위험이 있음</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.9.5-aws-crit" contenteditable="true">로그파일 무결성 검증(Log File Validation)이 비활성화, 로그 버킷이 일반 관리자에게 삭제·수정 권한을 부여하거나 퍼블릭 접근이 가능</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.9.5-aws-fix" contenteditable="true">Log File Validation 활성화(SHA-256 다이제스트 서명), 로그 버킷을 별도 계정으로 분리 후 Object Lock(WORM)·최소권한 정책 적용, 월 1회 이상 로그 검토·이상탐지 자동화(Athena 등)</div></div>
@@ -1064,18 +1078,17 @@ An error occurred (NoSuchPublicAccessBlockConfiguration) when calling the GetPub
 az role assignment list --scope WORKSPACE_ID -o table</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
-              <div class="code-shell"><div class="code" data-key="2.9.5-azure-example" contenteditable="true">$ az storage account blob-service-properties show -n stlogsprod --query "{immutability:immutableStorageWithVersioning,softDelete:deleteRetentionPolicy}"
+              <div class="code-shell"><div class="code" data-key="2.9.5-azure-example" contenteditable="true">$ az storage account blob-service-properties show -n stlogsprod --query "deleteRetentionPolicy"
 {
-  "immutability": { "enabled": false },
-  "softDelete": { "enabled": false }
+  "enabled": false
 }
 → 로그 저장 컨테이너에 불변성(Immutable)·삭제 방지 정책이 적용되지 않아 변조·삭제가 가능
 
-$ az role assignment list --scope /subscriptions/xxxx/resourceGroups/rg-monitor/providers/Microsoft.OperationalInsights/workspaces/law-central -o table
-Principal            Role
--------------------  --------------
-ops-team-all         Contributor
-→ 운영팀 전체가 Log Analytics Workspace에 Contributor(편집) 권한을 보유</div><button class="copy-btn" type="button">복사</button></div>
+$ az role assignment list --scope /subscriptions/xxxx/resourceGroups/rg-prod/providers/Microsoft.OperationalInsights/workspaces/law-prod -o table
+Principal                  Role
+--------------------------  -----------
+dev-team-all@contoso.com    Contributor
+→ 개발팀 전체 그룹에 Log Analytics Workspace 편집(Contributor) 권한이 부여되어 있어 로그 삭제·수정이 가능한 인원이 과도하게 많음</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.9.5-azure-crit" contenteditable="true">로그 저장 Storage Account에 불변성(Immutable Blob Storage)이 설정되지 않아 변조·삭제가 가능, Log Analytics Workspace에 과다한 사용자가 편집 권한을 보유</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.9.5-azure-fix" contenteditable="true">Immutable Blob Storage(WORM) 정책 적용, Workspace RBAC를 Reader 중심으로 최소화, 관리자 로그인·권한변경 기준 쿼리로 정기 로그 점검 자동화(Sentinel·Workbook)</div></div>
@@ -1110,14 +1123,14 @@ aws securityhub get-findings --filters '{"ComplianceStatus":[{"Value":"FAILED","
               <div class="code-shell"><div class="code" data-key="2.10.2-aws-example" contenteditable="true">$ aws cloudtrail lookup-events --lookup-attributes AttributeKey=EventName,AttributeValue=ConsoleLogin --max-results 3
 {
     "Events": [
-        { "Username": "ops-park", "EventTime": "2026-08-26T19:42:00Z" }
+        { "Username": "kim.admin", "EventTime": "2026-08-24T19:32:00Z" }
     ]
 }
-→ 심야 시간대 콘솔 로그인 이력 확인, 근무시간 외 접속 여부 추가 확인 필요
+→ 평소 업무 시간(09~18시)이 아닌 심야 시간대 콘솔 로그인 이력 확인, CloudTrailEvent의 접속 IP도 사내 대역이 아님
 
 $ aws organizations describe-organization
-An error occurred (AWSOrganizationsNotInUseException) when calling the DescribeOrganization operation
-→ Organizations가 활성화되어 있지 않아 계정 간 SCP 가드레일 자체가 없음
+An error occurred (AWSOrganizationsNotInUseException) when calling the DescribeOrganization operation: Your account is not a member of an organization
+→ AWS Organizations 자체가 구성되어 있지 않아 다계정 환경에서도 SCP 등 계정 간 가드레일이 전혀 적용되지 않음
 
 $ aws securityhub get-findings --filters '{"ComplianceStatus":[{"Value":"FAILED","Comparison":"EQUALS"}]}' --query 'Findings[].Title'
 [
@@ -1138,12 +1151,14 @@ az security regulatory-compliance-standards list</div><button class="copy-btn" t
             </div>
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
               <div class="code-shell"><div class="code" data-key="2.10.2-azure-example" contenteditable="true">$ az account management-group list -o table
-(빈 결과)
-→ 관리 그룹이 구성되지 않아 구독이 개별적으로 방치됨
+Name       DisplayName
+---------  -------------------
+mg-root     Tenant Root Group
+→ 관리 그룹이 루트 하나뿐이며, 운영·개발 구독을 구분하는 하위 관리 그룹 구조가 없음
 
 $ az policy assignment list -o table
 (빈 결과)
-→ 조직 전체에 적용되는 Azure Policy가 없어 구독 간 보안기준이 불일치
+→ 구독에 적용된 Azure Policy 할당이 하나도 없어 조직 차원의 보안 기준이 강제되지 않음
 
 $ az security regulatory-compliance-standards list --query "[].{name:name,state:state}"
 [
@@ -1171,9 +1186,10 @@ aws ssm describe-patch-group-state --patch-group PATCH_GROUP</div><button class=
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
               <div class="code-shell"><div class="code" data-key="2.10.8-aws-example" contenteditable="true">$ aws ssm describe-instance-information --query "InstanceInformationList[*].[InstanceId,PingStatus]"
 [
-    [ "i-0abc123def456", "Online" ]
+    [ "i-0abc123def456", "Online" ],
+    [ "i-0fed987cba654", "ConnectionLost" ]
 ]
-→ i-0def789 등 일부 인스턴스는 목록에 나타나지 않음(SSM Agent 미설치, 관리 사각지대)
+→ i-0fed987cba654는 SSM Agent 연결이 끊겨(ConnectionLost) 패치 현황 자체를 확인할 수 없는 상태
 
 $ aws ssm list-compliance-items --resource-id i-0abc123def456 --query "ComplianceItems[?Status=='NON_COMPLIANT']"
 [
@@ -1181,12 +1197,12 @@ $ aws ssm list-compliance-items --resource-id i-0abc123def456 --query "Complianc
 ]
 → CRITICAL 등급 미적용 패치 존재
 
-$ aws ssm describe-patch-group-state --patch-group prod-linux
+$ aws ssm describe-patch-group-state --patch-group prod-patch-group
 {
-    "Instances": 12,
-    "InstancesWithFailedPatches": 3
+    "InstancesWithCriticalNonCompliantPatches": 3,
+    "InstancesWithMissingPatches": 5
 }
-→ 패치 그룹 내 3대가 패치 적용 실패 상태</div><button class="copy-btn" type="button">복사</button></div>
+→ 패치 그룹 내 3대가 CRITICAL 패치 미준수 상태이고, 5대는 패치 정보 자체가 수집되지 않음</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.10.8-aws-crit" contenteditable="true">Systems Manager 관리 대상에 등록되지 않은 인스턴스가 존재(패치 관리 사각지대), Patch Compliance 상태가 NON_COMPLIANT인 인스턴스가 다수</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.10.8-aws-fix" contenteditable="true">전 EC2에 SSM Agent 설치 및 Patch Manager 베이스라인·일정 적용, Maintenance Window로 정기 패치 자동화, Compliance 대시보드로 미준수 인스턴스 상시 추적</div></div>
@@ -1202,9 +1218,9 @@ az automation software-update-configuration list --automation-account-name AUTOM
 7
 → Critical·Security 등급 패치 7건이 미적용 상태
 
-$ az automation software-update-configuration list --automation-account-name aa-prod -g rg-prod -o table
-(빈 결과)
-→ Update Management(Azure Automation)에 등록된 정기 패치 일정이 없음</div><button class="copy-btn" type="button">복사</button></div>
+$ az automation software-update-configuration list --automation-account-name aa-prod -g rg-prod --query "[].{name:name,nextRun:nextRunTime}"
+[]
+→ Azure Automation 기반 자동 패치 일정(Update Configuration)이 하나도 구성되어 있지 않아, vm-app-01의 미적용 패치가 수동 조치를 기다리는 상태</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.10.8-azure-crit" contenteditable="true">Automatic VM Guest Patching이 미설정, Update Management(Azure Automation)에 등록되지 않은 VM이 존재, 평가 결과 Critical·Security 패치가 다수 미적용</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.10.8-azure-fix" contenteditable="true">Automatic Guest Patching 활성화 또는 Azure Update Manager로 일원화, Maintenance Configuration으로 정기 패치 일정 수립, 패치 준수율 대시보드로 상시 추적</div></div>
@@ -1241,7 +1257,7 @@ aws inspector2 list-findings --filter-criteria '{"severity":[{"comparison":"EQUA
         { "accountId": "123456789012", "resourceState": { "ec2": { "status": "DISABLED" } } }
     ]
 }
-→ EC2 스캔이 비활성화(DISABLED)된 계정 확인
+→ EC2에 대한 Inspector2 스캔이 비활성화(DISABLED) 상태여서 해당 범위의 취약점이 애초에 탐지되지 않음
 
 $ aws inspector2 list-findings --filter-criteria '{"severity":[{"comparison":"EQUALS","value":"CRITICAL"}]}' --query 'findings[].title'
 [
@@ -1265,11 +1281,11 @@ az security sub-assessment list</div><button class="copy-btn" type="button">복�
 ]
 → Unhealthy 평가 항목이 존재하며 조치 이력이 없음
 
-$ az security sub-assessment list --query "[?status.severity=='High'].displayName"
+$ az security sub-assessment list --query "[].{finding:displayName,severity:status.severity}"
 [
-  "컨테이너 이미지에서 취약한 OpenSSL 패키지 발견"
+  { "finding": "취약한 TLS 버전 사용", "severity": "High" }
 ]
-→ 컨테이너 이미지 취약점 세부 평가에서도 High 등급 미조치 항목 확인</div><button class="copy-btn" type="button">복사</button></div>
+→ 상위 평가(Assessment) 하위의 세부 취약점(Sub-Assessment)에도 High 등급 미조치 항목이 존재</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.11.2-azure-crit" contenteditable="true">Defender for Cloud 취약점 평가가 일부 리소스에 구성되지 않음, Unhealthy 평가 항목이 장기간 조치되지 않고 누적됨</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.11.2-azure-fix" contenteditable="true">Defender for Servers·Containers 등 플랜을 활성화해 취약점 스캔을 자동화, Unhealthy 항목을 SLA로 관리하고 Secure Score에 반영, 월 1회 이상 취약점 리포트 검토</div></div>
@@ -1293,15 +1309,24 @@ aws guardduty list-findings --detector-id DETECTOR_ID</div><button class="copy-b
 {
     "DetectorIds": []
 }
-→ GuardDuty 탐지기가 생성되어 있지 않음(비활성화 상태)
+→ 주 운영 리전(ap-northeast-2)에는 GuardDuty 탐지기가 생성되어 있지 않음(비활성화 상태)
 
-$ aws guardduty get-detector --detector-id 00b00fd00a00bd00e00
-An error occurred (BadRequestException) when calling the GetDetector operation
-→ 탐지기 자체가 없어 조회도 불가능함(비활성화 상태 재확인)
+$ aws guardduty list-detectors --region us-east-1
+{
+    "DetectorIds": [ "12abc34def56gh78ij90klmn" ]
+}
+$ aws guardduty get-detector --detector-id 12abc34def56gh78ij90klmn --region us-east-1
+{
+    "Status": "ENABLED",
+    "FindingPublishingFrequency": "SIX_HOURS"
+}
+→ 다른 리전(us-east-1)에는 예전에 활성화해둔 탐지기가 남아있음. 리전별로 활성화 상태가 제각각이라 관리가 안 되고 있음
 
-$ aws guardduty list-findings --detector-id 00b00fd00a00bd00e00
-[]
-→ 활성화된 다른 리전에서는 High 등급 Finding이 30일 넘게 미확인 상태로 누적(별도 리전 조회 결과)</div><button class="copy-btn" type="button">복사</button></div>
+$ aws guardduty list-findings --detector-id 12abc34def56gh78ij90klmn --region us-east-1 --finding-criteria '{"Criterion":{"severity":{"Gte":7}}}'
+{
+    "FindingIds": [ "8ab9cd0-ef12-3456-ghij-klmnopqrstuv" ]
+}
+→ 방치된 리전의 탐지기에도 심각도 7 이상(High~Critical) Finding이 쌓여 있으나 아무도 대응하지 않은 상태</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.11.3-aws-crit" contenteditable="true">GuardDuty가 비활성화되어 있음, 활성화된 경우에도 High·Critical Finding이 장기간 확인·대응되지 않고 누적됨</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.11.3-aws-fix" contenteditable="true">전 계정·리전에 GuardDuty 활성화(Organizations 위임 관리자로 중앙화), Finding을 EventBridge+SNS 또는 SOAR로 자동 알림·대응 연계, 위협 인텔리전스 룰셋 정기 갱신</div></div>
@@ -1319,11 +1344,11 @@ az security auto-provisioning-setting list</div><button class="copy-btn" type="b
 ]
 → 미해결 상태의 Active Alert가 존재
 
-$ az security auto-provisioning-setting list --query "[].{name:name,enabled:properties.autoProvision}"
+$ az security auto-provisioning-setting list --query "[].{name:name,setting:autoProvision}"
 [
-  { "name": "default", "enabled": "Off" }
+  { "name": "default", "setting": "Off" }
 ]
-→ 모니터링 에이전트 자동 프로비저닝이 꺼져 있어 신규 리소스가 모니터링 사각지대에 놓임</div><button class="copy-btn" type="button">복사</button></div>
+→ 모니터링 에이전트 자동 프로비저닝이 Off 상태여서 신규로 생성되는 VM이 Defender 모니터링 대상에서 누락될 수 있음</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.11.3-azure-crit" contenteditable="true">Defender for Cloud Active Alert이 다수 미해결 상태로 누적됨, 자동 프로비저닝(모니터링 에이전트 배포)이 비활성화되어 일부 리소스가 모니터링 사각지대에 있음</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.11.3-azure-fix" contenteditable="true">Defender for Cloud 전체 플랜과 Auto-provisioning 활성화, Microsoft Sentinel 연동으로 상관분석·자동대응(Playbook) 구성, Active Alert 대응 SLA 수립</div></div>
@@ -1357,9 +1382,11 @@ aws dlm get-lifecycle-policies</div><button class="copy-btn" type="button">복�
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
               <div class="code-shell"><div class="code" data-key="2.12.1-aws-example" contenteditable="true">$ aws backup list-backup-plans
 {
-    "BackupPlansList": []
+    "BackupPlansList": [
+        { "BackupPlanName": "prod-daily-backup", "BackupPlanId": "a1b2c3d4-5e6f-7890-abcd-ef1234567890" }
+    ]
 }
-→ 계정에 백업 계획(Backup Plan) 자체가 생성되어 있지 않음
+→ 백업 계획이 1개뿐이라, 이 계획이 어떤 리소스(태그 기준 등)까지 포함하는지 추가로 확인해야 프로덕션 DB 누락 여부를 알 수 있음
 
 $ aws backup list-backup-jobs --by-state FAILED --query 'BackupJobs[].[ResourceArn,CreationDate]'
 [
@@ -1368,10 +1395,8 @@ $ aws backup list-backup-jobs --by-state FAILED --query 'BackupJobs[].[ResourceA
 → 프로덕션 DB의 최근 백업 작업이 실패(FAILED)한 이력 확인
 
 $ aws dlm get-lifecycle-policies
-{
-    "Policies": []
-}
-→ EBS 스냅샷 자동화 정책도 없어 볼륨 단위 백업이 수동 의존 상태</div><button class="copy-btn" type="button">복사</button></div>
+[]
+→ EBS 스냅샷을 자동화하는 Data Lifecycle Manager 정책이 하나도 없어, AWS Backup 계획에 포함되지 않은 EC2 볼륨은 스냅샷이 전혀 남지 않는 상태</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-crit"><span class="field-label">문제 판단 기준</span><div class="field-text" data-key="2.12.1-aws-crit" contenteditable="true">중요 자원(RDS·EBS·EFS)에 백업 계획(Backup Plan)이 연결되어 있지 않음, 최근 백업 Job이 FAILED 상태로 다수 존재, 백업 보관 리전이 운영 리전과 동일해 재해 시 동반 손실 위험</div></div>
             <div class="field field-fix"><span class="field-label">개선 방안</span><div class="field-text" data-key="2.12.1-aws-fix" contenteditable="true">AWS Backup으로 전사 백업 정책을 RPO·RTO 기준에 맞게 표준화, Cross-Region Copy로 이중화, 정기 복구 테스트(Restore Test)를 수행하고 결과를 기록·보고</div></div>
@@ -1384,13 +1409,17 @@ az backup item list -g RESOURCE_GROUP --vault-name VAULT_NAME --query "[?propert
 az backup vault list --query "[].properties.storageType"</div><button class="copy-btn" type="button">복사</button></div>
             </div>
             <div class="field field-example"><span class="field-label">실행 예시 및 결과</span>
-              <div class="code-shell"><div class="code" data-key="2.12.1-azure-example" contenteditable="true">$ az backup policy list -g rg-prod --vault-name rsv-prod --query "[].name"
-[ "DefaultPolicy" ]
-→ 기본 정책 1개만 존재, 리소스별 세분화된 백업 정책 없음
+              <div class="code-shell"><div class="code" data-key="2.12.1-azure-example" contenteditable="true">$ az backup policy list -g rg-prod --vault-name vault-prod -o table
+Name             WorkloadType
+---------------  --------------
+DefaultPolicy     VM
+→ 기본 정책(DefaultPolicy) 하나만 존재해, 워크로드별로 세분화된 백업 주기·보존기간이 마련되어 있지 않음
 
-$ az backup item list -g rg-prod --vault-name rsv-prod --query "[?properties.lastBackupStatus=='Failed'].name"
-[ "vm-app-01" ]
-→ vm-app-01의 최근 백업 상태가 Failed
+$ az backup item list -g rg-prod --vault-name vault-prod --query "[?properties.lastBackupStatus=='Failed']"
+[
+  { "name": "vm-app-01", "properties": { "lastBackupStatus": "Failed" } }
+]
+→ vm-app-01의 최근 백업이 Failed 상태로 남아있음
 
 $ az backup vault list --query "[].properties.storageType"
 [
@@ -1515,68 +1544,155 @@ $ az backup vault list --query "[].properties.storageType"
 
   // ---- CSV (Excel) export via downloads capability ----
   var exportBtn = document.getElementById('exportBtn');
-  var exportDocxBtn = document.getElementById('exportDocxBtn');
   var exportStatus = document.getElementById('exportStatus');
   var downloadsNS = null;
 
-  // 단일 값(도메인명, 명령어 한 줄, 판단기준 등)은 공백을 한 칸으로 정리해 한 셀에 담는다.
-  function csvEscapeFlat(value) {
+  function csvEscape(value) {
     var v = (value || '').replace(/\s+/g, ' ').trim();
     return '"' + v.replace(/"/g, '""') + '"';
   }
 
-  // 실행 예시·결과처럼 여러 줄(명령어+출력+코멘트)로 구성된 값은 줄바꿈을 살려 한 셀 안에 유지한다.
-  function csvEscapeMultiline(value) {
-    var v = (value || '').replace(/\r\n/g, '\n').split('\n').map(function (l) { return l.trim(); }).join('\n').trim();
-    return '"' + v.replace(/"/g, '""') + '"';
-  }
-
   function buildCSV() {
-    var header = ['영역ID', '영역명', '통제항목ID', '통제항목명', '설명', '제공자', '명령어순번', '점검명령어', '실행예시및결과', '문제판단기준', '개선방안'];
-    var rows = [header.map(csvEscapeFlat).join(',')];
+    var header = ['영역ID','영역명','통제항목ID','통제항목명','설명',
+      'AWS_점검명령어','AWS_실행예시및결과','AWS_문제판단기준','AWS_개선방안',
+      'Azure_점검명령어','Azure_실행예시및결과','Azure_문제판단기준','Azure_개선방안'];
+    var rows = [header];
 
     document.querySelectorAll('.domain').forEach(function (domainEl) {
       var domainId = domainEl.dataset.domainId;
       var domainName = domainEl.dataset.domainName;
       domainEl.querySelectorAll('.card').forEach(function (card) {
-        var controlId = card.dataset.id;
-        var controlName = card.querySelector('.card-head h3').textContent;
-        var desc = card.querySelector('.card-desc').textContent;
-
-        ['aws', 'azure'].forEach(function (provider) {
-          var section = card.querySelector('.provider.' + provider);
-          if (!section) return;
-          var providerLabel = provider === 'aws' ? 'AWS' : 'Azure';
-          var cmdText = section.querySelector('.field-cmd .code').textContent;
-          var exampleText = section.querySelector('.field-example .code').textContent;
-          var crit = section.querySelector('.field-crit .field-text').textContent;
-          var fix = section.querySelector('.field-fix .field-text').textContent;
-
-          // 명령어는 줄 단위로, 실행 예시·결과는 빈 줄(명령어 사이 여백) 단위로 나눠 같은 순번끼리 짝지어 레코드를 만든다.
-          var cmdLines = cmdText.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
-          var exampleBlocks = exampleText.split(/\n\s*\n/).map(function (s) { return s.trim(); }).filter(Boolean);
-          var count = Math.max(cmdLines.length, exampleBlocks.length, 1);
-
-          for (var i = 0; i < count; i++) {
-            rows.push([
-              csvEscapeFlat(domainId),
-              csvEscapeFlat(domainName),
-              csvEscapeFlat(controlId),
-              csvEscapeFlat(controlName),
-              csvEscapeFlat(desc),
-              csvEscapeFlat(providerLabel),
-              csvEscapeFlat(String(i + 1)),
-              csvEscapeFlat(cmdLines[i] || ''),
-              csvEscapeMultiline(exampleBlocks[i] || ''),
-              csvEscapeFlat(crit),
-              csvEscapeFlat(fix)
-            ].join(','));
-          }
-        });
+        var get = function (sel) {
+          var el = card.querySelector(sel);
+          return el ? el.textContent : '';
+        };
+        rows.push([
+          domainId,
+          domainName,
+          card.dataset.id,
+          get('.card-head h3'),
+          get('.card-desc'),
+          get('.provider.aws .field-cmd .code'),
+          get('.provider.aws .field-example .code'),
+          get('.provider.aws .field-crit .field-text'),
+          get('.provider.aws .field-fix .field-text'),
+          get('.provider.azure .field-cmd .code'),
+          get('.provider.azure .field-example .code'),
+          get('.provider.azure .field-crit .field-text'),
+          get('.provider.azure .field-fix .field-text')
+        ]);
       });
     });
 
-    return rows.join('\r\n');
+    return rows.map(function (r) { return r.map(csvEscape).join(','); }).join('\r\n');
+  }
+
+  // ---- Word (.doc) export ----
+  function escapeHtml(value) {
+    return (value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function codeBlockHtml(text) {
+    return '<div class="w-code">' + escapeHtml(text).replace(/\r?\n/g, '<br>') + '</div>';
+  }
+
+  function providerCellHtml(card, providerSel) {
+    var get = function (sel) {
+      var el = card.querySelector(providerSel + ' ' + sel);
+      return el ? el.textContent : '';
+    };
+    return (
+      '<span class="w-label">점검 명령어</span>' + codeBlockHtml(get('.field-cmd .code')) +
+      '<span class="w-label">실행 예시 및 결과</span>' + codeBlockHtml(get('.field-example .code')) +
+      '<span class="w-label">문제 판단 기준</span><div class="w-crit">' + escapeHtml(get('.field-crit .field-text')) + '</div>' +
+      '<span class="w-label">개선 방안</span><div class="w-fix">' + escapeHtml(get('.field-fix .field-text')) + '</div>'
+    );
+  }
+
+  function buildWordDocument() {
+    var title = '클라우드 ISMS 점검 매트릭스';
+    var lede = document.querySelector('.lede') ? document.querySelector('.lede').textContent : '';
+    var body = '';
+
+    // Word's HTML/DOC filter autofits table columns to content and largely
+    // ignores percentage widths on <col>/<td>. It only reliably honors
+    // absolute point (style) + pixel (legacy width attribute) values, which
+    // is what Word itself emits when it saves HTML — so we hardcode both
+    // here instead of using %.
+    var TABLE_WIDTH_PT = 720, COL_WIDTH_PT = 360;
+    var TABLE_WIDTH_PX = 960, COL_WIDTH_PX = 480;
+    var colStyle = 'width:' + COL_WIDTH_PT + '.0pt';
+
+    document.querySelectorAll('.domain').forEach(function (domainEl) {
+      var domainId = domainEl.dataset.domainId;
+      var domainName = domainEl.dataset.domainName;
+      body += '<h2>' + escapeHtml(domainId) + ' ' + escapeHtml(domainName) + '</h2>';
+
+      domainEl.querySelectorAll('.card').forEach(function (card) {
+        var controlId = card.dataset.id;
+        var controlName = card.querySelector('.card-head h3') ? card.querySelector('.card-head h3').textContent : '';
+        var desc = card.querySelector('.card-desc') ? card.querySelector('.card-desc').textContent : '';
+        body +=
+          '<h3><span class="w-badge">' + escapeHtml(controlId) + '</span> ' + escapeHtml(controlName) + '</h3>' +
+          '<p class="w-desc">' + escapeHtml(desc) + '</p>' +
+          '<table class="w-matrix" width="' + TABLE_WIDTH_PX + '" cellpadding="0" cellspacing="0" style="table-layout:fixed;mso-table-layout-alt:fixed;width:' + TABLE_WIDTH_PT + '.0pt;">' +
+          '<colgroup><col width="' + COL_WIDTH_PX + '" style="' + colStyle + '"><col width="' + COL_WIDTH_PX + '" style="' + colStyle + '"></colgroup>' +
+          '<tr>' +
+          '<th class="w-th-aws" width="' + COL_WIDTH_PX + '" style="' + colStyle + '">AWS</th>' +
+          '<th class="w-th-azure" width="' + COL_WIDTH_PX + '" style="' + colStyle + '">Azure</th>' +
+          '</tr><tr>' +
+          '<td width="' + COL_WIDTH_PX + '" style="' + colStyle + '">' + providerCellHtml(card, '.provider.aws') + '</td>' +
+          '<td width="' + COL_WIDTH_PX + '" style="' + colStyle + '">' + providerCellHtml(card, '.provider.azure') + '</td>' +
+          '</tr></table>';
+      });
+    });
+
+    return (
+      '<!DOCTYPE html>' +
+      '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
+      '<head><meta charset="utf-8"><title>' + escapeHtml(title) + '</title>' +
+      '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>90</w:Zoom>' +
+      '<w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->' +
+      '<style>' +
+      // A bare "@page { ... }" rule is silently ignored by Word's HTML/DOC
+      // filter (it keeps its own default portrait page) — Word only honors
+      // page setup when the @page rule is named and paired with a matching
+      // "div.NAME { page: NAME; }" rule wrapping the body content.
+      '@page Section1 { size: 29.7cm 21cm; mso-page-orientation: landscape; margin: 1.6cm; }' +
+      'div.Section1 { page: Section1; }' +
+      'body { font-family: "맑은 고딕", "Malgun Gothic", sans-serif; font-size: 10pt; color: #1a2230; }' +
+      'h1 { font-size: 20pt; color: #0d4f4e; margin-bottom: 4pt; }' +
+      '.w-lede { font-size: 10pt; color: #5b6572; margin-bottom: 16pt; }' +
+      'h2 { font-size: 14pt; color: #0d4f4e; border-bottom: 1.5pt solid #dbe1e9; padding-bottom: 4pt; margin-top: 22pt; }' +
+      'h3 { font-size: 12pt; margin: 14pt 0 3pt; }' +
+      '.w-badge { font-family: Consolas, monospace; font-size: 9pt; background: #eef1f5; border: 1pt solid #dbe1e9; padding: 1pt 5pt; }' +
+      '.w-desc { font-size: 9.5pt; color: #5b6572; margin: 0 0 6pt; }' +
+      // mso-table-layout-alt MUST stay out of this class rule: declaring it
+      // on a class selector (as opposed to the table's own inline style,
+      // where it's also set below) makes Word re-enable AutoFit-to-Contents
+      // instead of honoring it — verified empirically against Word 16.0.
+      'table.w-matrix { border-collapse: collapse; margin-bottom: 12pt; table-layout: fixed; }' +
+      'table.w-matrix th, table.w-matrix td { border: 1pt solid #dbe1e9; padding: 6pt 8pt; vertical-align: top; overflow: hidden; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; }' +
+      'table.w-matrix th { font-family: Consolas, monospace; font-size: 9pt; text-align: left; }' +
+      '.w-th-aws { background: #f6ead9; color: #a15a20; }' +
+      '.w-th-azure { background: #dfeaf7; color: #2b5f96; }' +
+      '.w-label { display: block; font-family: Consolas, monospace; font-size: 7.5pt; text-transform: uppercase; color: #8b95a3; margin: 6pt 0 2pt; }' +
+      '.w-label:first-child { margin-top: 0; }' +
+      '.w-code { font-family: Consolas, monospace; font-size: 8.5pt; line-height: 1.5; background: #0e1420; color: #d9e2f1; padding: 6pt 8pt; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; }' +
+      '.w-crit { border-left: 3pt solid #a63a30; background: #f7e5e3; padding: 5pt 7pt; font-size: 9pt; word-wrap: break-word; }' +
+      '.w-fix { border-left: 3pt solid #326a41; background: #e3f0e6; padding: 5pt 7pt; font-size: 9pt; word-wrap: break-word; }' +
+      '</style></head>' +
+      '<body>' +
+      '<div class="Section1">' +
+      '<h1>' + escapeHtml(title) + '</h1>' +
+      '<p class="w-lede">' + escapeHtml(lede) + '</p>' +
+      body +
+      '</div>' +
+      '</body></html>'
+    );
   }
 
   var ERROR_MESSAGES = {
@@ -1603,173 +1719,7 @@ $ az backup vault list --query "[].properties.storageType"
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   }
 
-  // ---- minimal ZIP (store-only) writer, used to package the .docx (Open XML) file ----
-  var CRC32_TABLE = (function () {
-    var table = [];
-    for (var n = 0; n < 256; n++) {
-      var c = n;
-      for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
-      table[n] = c >>> 0;
-    }
-    return table;
-  })();
-
-  function crc32(bytes) {
-    var crc = 0xFFFFFFFF;
-    for (var i = 0; i < bytes.length; i++) {
-      crc = (crc >>> 8) ^ CRC32_TABLE[(crc ^ bytes[i]) & 0xFF];
-    }
-    return (crc ^ 0xFFFFFFFF) >>> 0;
-  }
-
-  function le16(n) { return [n & 0xff, (n >> 8) & 0xff]; }
-  function le32(n) { return [n & 0xff, (n >> 8) & 0xff, (n >> 16) & 0xff, (n >>> 24) & 0xff]; }
-
-  function createZip(files) {
-    var encoder = new TextEncoder();
-    var localChunks = [];
-    var centralChunks = [];
-    var offset = 0;
-
-    files.forEach(function (file) {
-      var nameBytes = encoder.encode(file.name);
-      var data = file.data;
-      var crc = crc32(data);
-      var localHeader = []
-        .concat([0x50, 0x4b, 0x03, 0x04])
-        .concat(le16(20)).concat(le16(0)).concat(le16(0))
-        .concat(le16(0)).concat(le16(0))
-        .concat(le32(crc)).concat(le32(data.length)).concat(le32(data.length))
-        .concat(le16(nameBytes.length)).concat(le16(0));
-      var localHeaderBytes = new Uint8Array(localHeader);
-
-      localChunks.push(localHeaderBytes, nameBytes, data);
-
-      var centralHeader = []
-        .concat([0x50, 0x4b, 0x01, 0x02])
-        .concat(le16(20)).concat(le16(20)).concat(le16(0))
-        .concat(le16(0)).concat(le16(0)).concat(le16(0))
-        .concat(le32(crc)).concat(le32(data.length)).concat(le32(data.length))
-        .concat(le16(nameBytes.length)).concat(le16(0)).concat(le16(0))
-        .concat(le16(0)).concat(le16(0)).concat(le32(0))
-        .concat(le32(offset));
-      centralChunks.push(new Uint8Array(centralHeader), nameBytes);
-
-      offset += localHeaderBytes.length + nameBytes.length + data.length;
-    });
-
-    var centralStart = offset;
-    var centralSize = centralChunks.reduce(function (sum, c) { return sum + c.length; }, 0);
-    var eocd = new Uint8Array(
-      [0x50, 0x4b, 0x05, 0x06]
-        .concat(le16(0)).concat(le16(0))
-        .concat(le16(files.length)).concat(le16(files.length))
-        .concat(le32(centralSize)).concat(le32(centralStart))
-        .concat(le16(0))
-    );
-
-    var allChunks = localChunks.concat(centralChunks, [eocd]);
-    var totalLength = allChunks.reduce(function (sum, c) { return sum + c.length; }, 0);
-    var out = new Uint8Array(totalLength);
-    var pos = 0;
-    allChunks.forEach(function (chunk) { out.set(chunk, pos); pos += chunk.length; });
-    return out;
-  }
-
-  // ---- Word (.docx) export ----
-  function xmlEscape(value) {
-    return String(value || '')
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
-  }
-
-  function docxParagraph(text, opts) {
-    opts = opts || {};
-    var rPr = '';
-    if (opts.bold) rPr += '<w:b/>';
-    if (opts.mono) rPr += '<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas" w:cs="Consolas"/>';
-    if (opts.size) rPr += '<w:sz w:val="' + (opts.size * 2) + '"/><w:szCs w:val="' + (opts.size * 2) + '"/>';
-    if (opts.color) rPr += '<w:color w:val="' + opts.color + '"/>';
-    var rPrXml = rPr ? '<w:rPr>' + rPr + '</w:rPr>' : '';
-    var pPr = '<w:pPr><w:spacing w:before="' + (opts.before != null ? opts.before : 60) + '" w:after="' + (opts.after != null ? opts.after : 60) + '"/></w:pPr>';
-    var lines = String(text || '').split('\n');
-    var runs = lines.map(function (line, i) {
-      var br = i < lines.length - 1 ? '<w:br/>' : '';
-      return '<w:r>' + rPrXml + '<w:t xml:space="preserve">' + xmlEscape(line) + '</w:t></w:r>' + br;
-    }).join('');
-    return '<w:p>' + pPr + runs + '</w:p>';
-  }
-
-  function buildDocxBody() {
-    var parts = [];
-    parts.push(docxParagraph('클라우드 ISMS 점검 매트릭스', { bold: true, size: 28, before: 0, after: 200 }));
-    parts.push(docxParagraph('AWS·Azure 클라우드 ISMS(-P) 인증심사 준비용 점검 명령어, 실행 예시 및 결과, 문제 판단 기준, 개선 방안 정리', { size: 10, color: '5b6572', after: 300 }));
-
-    document.querySelectorAll('.domain').forEach(function (domainEl) {
-      var domainId = domainEl.dataset.domainId;
-      var domainName = domainEl.dataset.domainName;
-      parts.push(docxParagraph(domainId + ' ' + domainName, { bold: true, size: 18, color: '0d4f4e', before: 300, after: 120 }));
-
-      domainEl.querySelectorAll('.card').forEach(function (card) {
-        var controlId = card.dataset.id;
-        var controlName = card.querySelector('.card-head h3').textContent;
-        var desc = card.querySelector('.card-desc').textContent;
-
-        parts.push(docxParagraph(controlId + ' ' + controlName, { bold: true, size: 14, before: 220, after: 60 }));
-        parts.push(docxParagraph(desc, { size: 10, after: 120 }));
-
-        ['aws', 'azure'].forEach(function (provider) {
-          var section = card.querySelector('.provider.' + provider);
-          if (!section) return;
-          var providerLabel = provider === 'aws' ? 'AWS' : 'Azure';
-          var cmd = section.querySelector('.field-cmd .code').textContent.trim();
-          var example = section.querySelector('.field-example .code').textContent.trim();
-          var crit = section.querySelector('.field-crit .field-text').textContent.trim();
-          var fix = section.querySelector('.field-fix .field-text').textContent.trim();
-
-          parts.push(docxParagraph(providerLabel, { bold: true, size: 12, before: 160, after: 40 }));
-          parts.push(docxParagraph('점검 명령어', { bold: true, size: 9, color: '5b6572', before: 60, after: 20 }));
-          parts.push(docxParagraph(cmd, { mono: true, size: 9, before: 0, after: 100 }));
-          parts.push(docxParagraph('실행 예시 및 결과', { bold: true, size: 9, color: '5b6572', before: 60, after: 20 }));
-          parts.push(docxParagraph(example, { mono: true, size: 9, before: 0, after: 100 }));
-          parts.push(docxParagraph('문제 판단 기준', { bold: true, size: 9, color: '5b6572', before: 60, after: 20 }));
-          parts.push(docxParagraph(crit, { size: 10, before: 0, after: 100 }));
-          parts.push(docxParagraph('개선 방안', { bold: true, size: 9, color: '5b6572', before: 60, after: 20 }));
-          parts.push(docxParagraph(fix, { size: 10, before: 0, after: 100 }));
-        });
-      });
-    });
-
-    return parts.join('');
-  }
-
-  function buildDocxBytes() {
-    var encoder = new TextEncoder();
-    var body = buildDocxBody();
-
-    var documentXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
-      '<w:body>' + body + '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/></w:sectPr></w:body>' +
-      '</w:document>';
-
-    var contentTypesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
-      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
-      '<Default Extension="xml" ContentType="application/xml"/>' +
-      '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
-      '</Types>';
-
-    var rootRelsXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
-      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
-      '</Relationships>';
-
-    return createZip([
-      { name: '[Content_Types].xml', data: encoder.encode(contentTypesXml) },
-      { name: '_rels/.rels', data: encoder.encode(rootRelsXml) },
-      { name: 'word/document.xml', data: encoder.encode(documentXml) }
-    ]);
-  }
+  var exportWordBtn = document.getElementById('exportWordBtn');
 
   (async function initDownloads() {
     try {
@@ -1780,8 +1730,8 @@ $ az backup vault list --query "[].properties.storageType"
     if (!downloadsNS) standaloneMode = true;
     exportBtn.disabled = false;
     exportBtn.textContent = 'CSV로 내보내기 (Excel용)';
-    exportDocxBtn.disabled = false;
-    exportDocxBtn.textContent = 'Word로 내보내기 (.docx)';
+    exportWordBtn.disabled = false;
+    exportWordBtn.textContent = 'Word로 내보내기 (.doc)';
   })();
 
   exportBtn.addEventListener('click', async function () {
@@ -1816,36 +1766,32 @@ $ az backup vault list --query "[].properties.storageType"
     }
   });
 
-  var DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-
-  exportDocxBtn.addEventListener('click', async function () {
-    var prevLabel = exportDocxBtn.textContent;
+  exportWordBtn.addEventListener('click', async function () {
+    var prevLabel = exportWordBtn.textContent;
     exportStatus.textContent = '';
-    var bytes = buildDocxBytes();
-    var filename = 'ISMS_AWS_Azure_Cloud_Audit_Matrix.docx';
+    var doc = buildWordDocument();
+    var filename = 'ISMS_AWS_Azure_Cloud_Audit_Matrix.doc';
+    var mimeType = 'application/msword;charset=utf-8;';
 
     if (downloadsNS) {
-      exportDocxBtn.disabled = true;
-      exportDocxBtn.textContent = '내보내는 중…';
+      exportWordBtn.disabled = true;
+      exportWordBtn.textContent = '내보내는 중…';
       try {
-        var binary = '';
-        for (var i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-        var base64 = btoa(binary);
-        await downloadsNS.save({ filename: filename, data: base64, encoding: 'base64' });
+        await downloadsNS.save({ filename: filename, data: doc, mimeType: mimeType });
         exportStatus.textContent = '다운로드 완료 · Word에서 열어 확인하세요.';
       } catch (err) {
         var code = err && err.code;
         exportStatus.textContent = ERROR_MESSAGES[code] || '다운로드에 실패했습니다.';
       } finally {
-        exportDocxBtn.disabled = false;
-        exportDocxBtn.textContent = prevLabel;
+        exportWordBtn.disabled = false;
+        exportWordBtn.textContent = prevLabel;
       }
       return;
     }
 
     if (standaloneMode) {
       try {
-        triggerBlobDownload(filename, bytes, DOCX_MIME);
+        triggerBlobDownload(filename, doc, mimeType);
         exportStatus.textContent = '다운로드 완료 · Word에서 열어 확인하세요.';
       } catch (e) {
         exportStatus.textContent = '다운로드에 실패했습니다. 브라우저의 다운로드 차단 설정을 확인해 주세요.';

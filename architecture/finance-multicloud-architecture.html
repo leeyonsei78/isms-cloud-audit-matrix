@@ -1,0 +1,914 @@
+<title>금융 그룹 멀티클라우드 아키텍처</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f5f0;
+    --surface: #ffffff;
+    --surface-2: #ebede4;
+    --surface-3: #e0e3d8;
+    --border: #d2d5c8;
+    --border-strong: #b5b9a9;
+    --ink: #1b201a;
+    --ink-muted: #5a6055;
+    --ink-faint: #8a9084;
+
+    --aws: #a1652b;
+    --aws-soft: #f2e3d1;
+    --aws-line: #c48c50;
+    --azure: #2d5c85;
+    --azure-soft: #dce6ee;
+    --azure-line: #5a89ac;
+
+    --shared: #52578a;
+    --shared-soft: #e3e4ee;
+    --shared-line: #797eb0;
+
+    --ca: #256b56;
+    --ca-soft: #dbece4;
+    --ca-line: #4c9880;
+    --cb: #7a4373;
+    --cb-soft: #efe1ec;
+    --cb-line: #a56a9c;
+
+    --sec: #9a3a2e;
+    --sec-soft: #f1ddd7;
+    --enc: #8f6f1c;
+    --enc-soft: #efe5c6;
+    --block: #7c2b23;
+
+    --shadow: 0 1px 2px rgba(28,32,22,.05), 0 10px 26px -16px rgba(28,32,22,.20);
+    --radius: 12px;
+    --radius-sm: 7px;
+    --font-kr: "Noto Sans KR", "Malgun Gothic", -apple-system, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10130e;
+      --surface: #171b14;
+      --surface-2: #1e2318;
+      --surface-3: #262c1f;
+      --border: #343b2b;
+      --border-strong: #47503b;
+      --ink: #e7e9e0;
+      --ink-muted: #a4aa9a;
+      --ink-faint: #6e7568;
+
+      --aws: #d99a5c;
+      --aws-soft: rgba(217,154,92,.15);
+      --aws-line: #d99a5c;
+      --azure: #82adcf;
+      --azure-soft: rgba(130,173,207,.15);
+      --azure-line: #82adcf;
+
+      --shared: #9a9fce;
+      --shared-soft: rgba(154,159,206,.15);
+      --shared-line: #9a9fce;
+
+      --ca: #66ba9d;
+      --ca-soft: rgba(102,186,157,.15);
+      --ca-line: #66ba9d;
+      --cb: #c98ebf;
+      --cb-soft: rgba(201,142,191,.15);
+      --cb-line: #c98ebf;
+
+      --sec: #e28a7d;
+      --sec-soft: rgba(226,138,125,.15);
+      --enc: #d6b455;
+      --enc-soft: rgba(214,180,85,.15);
+      --block: #d97b70;
+
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 14px 30px -16px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10130e;
+    --surface: #171b14;
+    --surface-2: #1e2318;
+    --surface-3: #262c1f;
+    --border: #343b2b;
+    --border-strong: #47503b;
+    --ink: #e7e9e0;
+    --ink-muted: #a4aa9a;
+    --ink-faint: #6e7568;
+
+    --aws: #d99a5c;
+    --aws-soft: rgba(217,154,92,.15);
+    --aws-line: #d99a5c;
+    --azure: #82adcf;
+    --azure-soft: rgba(130,173,207,.15);
+    --azure-line: #82adcf;
+
+    --shared: #9a9fce;
+    --shared-soft: rgba(154,159,206,.15);
+    --shared-line: #9a9fce;
+
+    --ca: #66ba9d;
+    --ca-soft: rgba(102,186,157,.15);
+    --ca-line: #66ba9d;
+    --cb: #c98ebf;
+    --cb-soft: rgba(201,142,191,.15);
+    --cb-line: #c98ebf;
+
+    --sec: #e28a7d;
+    --sec-soft: rgba(226,138,125,.15);
+    --enc: #d6b455;
+    --enc-soft: rgba(214,180,85,.15);
+    --block: #d97b70;
+
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 14px 30px -16px rgba(0,0,0,.6);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-kr);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 0 22px 90px; }
+  ::selection { background: var(--shared-soft); }
+
+  /* ---------- header ---------- */
+  header.top { border-bottom: 1px solid var(--border); background: linear-gradient(180deg, var(--surface-2), var(--bg)); }
+  .top-inner { max-width: 1320px; margin: 0 auto; padding: 46px 22px 30px; }
+  .eyebrow { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--shared); font-weight: 600; }
+  h1 { margin: 10px 0 14px; font-size: clamp(26px, 3.4vw, 34px); font-weight: 900; letter-spacing: -.01em; text-wrap: balance; }
+  .lede { max-width: 74ch; color: var(--ink-muted); font-size: 15px; margin: 0; }
+
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+  .badge { font-family: var(--font-mono); font-size: 11.5px; font-weight: 600; border-radius: 999px; padding: 5px 12px; border: 1px solid var(--border-strong); color: var(--ink-muted); background: var(--surface); }
+  .badge.block { color: var(--block); border-color: var(--block); background: color-mix(in srgb, var(--block) 10%, var(--surface)); }
+
+  section { margin-top: 48px; }
+  .section-head { margin-bottom: 18px; }
+  .section-kicker { font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 6px; }
+  h2 { font-size: 21px; font-weight: 800; margin: 0 0 6px; letter-spacing: -.005em; }
+  .section-desc { color: var(--ink-muted); font-size: 13.8px; max-width: 76ch; margin: 0; }
+
+  /* ---------- zone criteria cards ---------- */
+  .criteria-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-top: 20px; }
+  .criteria-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 17px; box-shadow: var(--shadow); }
+  .criteria-num { font-family: var(--font-mono); font-size: 11px; color: var(--shared); font-weight: 700; letter-spacing: .04em; }
+  .criteria-title { font-weight: 700; font-size: 14.5px; margin: 6px 0 7px; }
+  .criteria-text { font-size: 12.8px; color: var(--ink-muted); line-height: 1.62; }
+  .criteria-text b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- legend strip ---------- */
+  .legend-strip { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; padding: 14px 18px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-top: 22px; font-size: 12.5px; color: var(--ink-muted); }
+  .legend-item { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+  .swatch { width: 13px; height: 13px; border-radius: 4px; flex: none; border: 1px solid rgba(0,0,0,.12); }
+
+  /* ---------- diagram shell ---------- */
+  .diagram-shell { overflow-x: auto; margin-top: 22px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); box-shadow: var(--shadow); }
+  .diagram { min-width: 1360px; padding: 30px 30px 34px; }
+
+  .onprem-row { display: flex; justify-content: center; margin-bottom: 6px; }
+  .onprem-box { background: var(--surface); border: 1.5px solid var(--border-strong); border-radius: var(--radius); padding: 14px 26px; text-align: center; box-shadow: var(--shadow); }
+  .onprem-box .otitle { font-weight: 800; font-size: 14.5px; }
+  .onprem-box .osub { font-family: var(--font-mono); font-size: 11px; color: var(--ink-muted); margin-top: 4px; }
+
+  .link-row { display: grid; grid-template-columns: minmax(560px,1fr) 190px minmax(560px,1fr); column-gap: 22px; align-items: end; margin: 4px 0 2px; }
+  .link-col { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .link-line { width: 2px; height: 26px; background: repeating-linear-gradient(to bottom, var(--ink-faint) 0 6px, transparent 6px 10px); position: relative; }
+  .link-label { font-family: var(--font-mono); font-size: 10.8px; color: var(--ink-muted); text-align: center; }
+  .link-block { font-family: var(--font-mono); font-size: 10px; color: var(--block); font-weight: 700; text-align:center; }
+
+  .clouds-grid { display: grid; grid-template-columns: minmax(560px,1fr) 190px minmax(560px,1fr); column-gap: 22px; row-gap: 22px; margin-top: 8px; }
+  .spine-cell { display: flex; align-items: center; justify-content: center; }
+  .spine-inner { width: 100%; border-left: 1px dashed var(--border-strong); border-right: 1px dashed var(--border-strong); padding: 8px 10px; font-family: var(--font-mono); font-size: 10.6px; color: var(--ink-muted); text-align: center; line-height: 1.7; }
+  .spine-inner .t { color: var(--ink); font-weight: 600; }
+
+  .cloud-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-radius: var(--radius-sm); font-weight: 800; font-size: 15px; }
+  .cloud-header.aws { background: var(--aws-soft); color: var(--aws); border: 1px solid var(--aws-line); }
+  .cloud-header.azure { background: var(--azure-soft); color: var(--azure); border: 1px solid var(--azure-line); }
+  .cloud-header .ctag { font-family: var(--font-mono); font-size: 10.5px; font-weight: 700; opacity: .8; }
+
+  /* generic account/zone boxes */
+  .acct-box { border-radius: var(--radius); border: 1.5px dashed var(--border-strong); padding: 14px; background: var(--surface); }
+  .acct-box.shared { border-color: var(--shared-line); background: var(--shared-soft); }
+  .acct-box.ca { border-color: var(--ca-line); }
+  .acct-box.cb { border-color: var(--cb-line); }
+  .acct-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .acct-name { font-weight: 700; font-size: 13.5px; }
+  .env-tag { font-family: var(--font-mono); font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; letter-spacing: .03em; }
+  .env-tag.prod { background: var(--sec-soft); color: var(--sec); }
+  .env-tag.stage { background: var(--enc-soft); color: var(--enc); }
+  .env-tag.test { background: var(--surface-3); color: var(--ink-muted); }
+
+  .item-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .pill { font-family: var(--font-mono); font-size: 10.6px; padding: 3px 9px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); color: var(--ink-muted); white-space: nowrap; }
+  .pill.sec { background: var(--sec-soft); color: var(--sec); border-color: transparent; }
+  .pill.enc { background: var(--enc-soft); color: var(--enc); border-color: transparent; }
+  .pill.co-a { background: var(--ca-soft); color: var(--ca); border-color: transparent; }
+  .pill.co-b { background: var(--cb-soft); color: var(--cb); border-color: transparent; }
+
+  .shared-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; margin-top: 4px; }
+  .shared-item { font-size: 11.6px; }
+  .shared-item .k { font-family: var(--font-mono); font-weight: 700; color: var(--shared); display: block; font-size: 10.6px; margin-bottom: 1px; }
+  .shared-item .v { color: var(--ink-muted); }
+
+  /* zone stack (full detail) */
+  .zone-stack { display: flex; flex-direction: column; margin-top: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+  .zone-row { padding: 9px 12px; border-bottom: 1px solid var(--border); background: var(--surface); position: relative; }
+  .zone-row:last-child { border-bottom: none; }
+  .zone-row.db { background: var(--surface-2); }
+  .zone-row .zhead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .zone-label { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint); font-weight: 700; }
+  .zone-svc { font-size: 12.4px; font-weight: 600; }
+  .zone-arrow { text-align: center; font-size: 11px; color: var(--ink-faint); padding: 1px 0; font-family: var(--font-mono); }
+
+  /* compact env card */
+  .env-card { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; background: var(--surface); flex: 1 1 220px; min-width: 200px; }
+  .env-card-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  .mini-bar { display: flex; height: 8px; border-radius: 5px; overflow: hidden; margin-top: 8px; border: 1px solid var(--border); }
+  .mini-bar span { flex: 1; }
+  .mini-bar .w1 { background: var(--surface-3); }
+  .mini-bar .w2 { background: var(--border-strong); }
+  .mini-bar .w3 { background: var(--sec); }
+  .env-note { font-size: 11.2px; color: var(--ink-muted); margin-top: 6px; line-height: 1.55; }
+
+  .env-cards-wrap { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+
+  .more-note { text-align: center; font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-faint); padding: 8px 0 2px; letter-spacing: .02em; }
+
+  /* ---------- comparison table ---------- */
+  .table-scroll { overflow-x: auto; margin-top: 20px; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+  table.cmp { border-collapse: collapse; width: 100%; min-width: 880px; background: var(--surface); font-size: 13px; }
+  table.cmp caption { caption-side: top; text-align: left; padding: 12px 16px; font-weight: 700; font-size: 13.5px; background: var(--surface-2); border-bottom: 1px solid var(--border); }
+  table.cmp th, table.cmp td { padding: 9px 14px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+  table.cmp thead th { font-family: var(--font-mono); font-size: 10.8px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-faint); background: var(--surface-2); font-weight: 700; }
+  table.cmp tbody tr:hover { background: var(--surface-2); }
+  table.cmp td.cat { color: var(--ink-muted); font-size: 12.4px; white-space: nowrap; }
+  table.cmp td.aws-cell { font-family: var(--font-mono); font-size: 12.3px; color: var(--aws); }
+  table.cmp td.azure-cell { font-family: var(--font-mono); font-size: 12.3px; color: var(--azure); }
+  table.cmp td.role { color: var(--ink-muted); font-size: 12.4px; }
+
+  /* ---------- access control figure ---------- */
+  figure.diagram-fig { margin: 20px 0 0; padding: 0; }
+  .fig-shell { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); padding: 18px; }
+  figure.diagram-fig svg { display: block; margin: 0 auto; max-width: 100%; height: auto; color: var(--ink); }
+  figcaption { font-size: 12.6px; color: var(--ink-muted); margin-top: 10px; text-align: center; }
+
+  footer { max-width: 1320px; margin: 64px auto 0; padding: 22px 22px 0; border-top: 1px solid var(--border); color: var(--ink-faint); font-size: 12px; line-height: 1.75; }
+
+  @media (max-width: 980px) {
+    .link-row, .clouds-grid { grid-template-columns: 1fr; }
+    .spine-cell { order: 2; }
+    .spine-inner { border-left: none; border-right: none; border-top: 1px dashed var(--border-strong); border-bottom: 1px dashed var(--border-strong); }
+  }
+</style>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="eyebrow">Financial Holdings · AWS + Azure Multi-Cloud</div>
+    <h1>금융 그룹 멀티클라우드 아키텍처</h1>
+    <p class="lede">지주사 산하 계열사·자회사가 AWS와 Azure를 함께 사용하는 것을 전제로, 개인신용정보 처리에 따른 망분리(폐쇄망)·Zone 구분·환경 분리(운영/Stage/Test)·회사별 DB 암호화 분리를 반영했습니다. 두 클라우드의 실제 서비스 명칭을 같은 위치에 나란히 배치해 동일 기능을 바로 비교할 수 있도록 구성했습니다.</p>
+    <div class="badges">
+      <span class="badge block">🚫 인터넷 게이트웨이 없음 — 완전 폐쇄망</span>
+      <span class="badge">회사별 Account/Subscription 분리</span>
+      <span class="badge">운영 · Stage · Test 계정 분리</span>
+      <span class="badge">DB 인스턴스 · 암호화 키 회사별 분리</span>
+      <span class="badge">보안관제(SOC) Zone은 계열사 공통 통합</span>
+      <span class="badge">계열사 공통망(Common Network) 경유 연결</span>
+      <span class="badge">금융보안원 가이드 · 자체 위험평가(CSA) 준수</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ================= Zone 구분 기준 ================= -->
+  <section>
+    <div class="section-head">
+      <div class="section-kicker">01 · Classification</div>
+      <h2>Zone과 영역은 무엇으로 나누는가</h2>
+      <p class="section-desc">아래 다이어그램의 모든 경계선은 임의로 그은 것이 아니라, 다음 5가지 기준 중 하나에 대응됩니다. 각 기준이 실제로 어떤 AWS/Azure 단위로 구현되는지 함께 표시했습니다.</p>
+    </div>
+    <div class="criteria-grid">
+      <div class="criteria-card">
+        <div class="criteria-num">기준 1 · 회사 단위</div>
+        <div class="criteria-title">계정 / 구독 경계</div>
+        <div class="criteria-text">계열사·자회사마다 <b>AWS Account</b> / <b>Azure Subscription</b>을 완전히 별도로 발급합니다. 과금·IAM·리소스가 전부 분리되는 가장 상위의 격리 경계입니다.</div>
+      </div>
+      <div class="criteria-card">
+        <div class="criteria-num">기준 2 · 환경 단위</div>
+        <div class="criteria-title">운영 · Stage · Test 경계</div>
+        <div class="criteria-text">같은 회사 안에서도 <b>운영(Prod) · Stage · Test</b> 계정을 분리합니다. 운영 계정만 실 개인신용정보를 보유하고, Stage는 마스킹 데이터, Test는 운영 데이터 접근 자체가 차단됩니다.</div>
+      </div>
+      <div class="criteria-card">
+        <div class="criteria-num">기준 3 · 업무 계층</div>
+        <div class="criteria-title">Web · WAS · DB Zone 경계</div>
+        <div class="criteria-text">VPC/VNet 내부를 <b>Web → WAS → DB → 관리</b> 4개 Subnet(Zone)으로 나눕니다. 트래픽은 반드시 바로 앞 계층을 거쳐야 하며 계층을 건너뛰는 접근은 차단합니다.</div>
+      </div>
+      <div class="criteria-card">
+        <div class="criteria-num">기준 4 · 보안 등급</div>
+        <div class="criteria-title">개인신용정보 처리 여부</div>
+        <div class="criteria-text">개인신용정보를 저장하는 <b>DB Zone</b>은 다른 Zone보다 한 단계 높은 통제(암호화·DAM·별도 보안그룹)를 추가 적용합니다.</div>
+      </div>
+      <div class="criteria-card">
+        <div class="criteria-num">기준 5 · 소속</div>
+        <div class="criteria-title">전용(Dedicated) vs 공통(Shared)</div>
+        <div class="criteria-text">인증·관제·백업처럼 전사가 공유해도 되는 기능만 <b>계열사 공통 계정</b>에 두고, 업무 시스템은 <b>회사 전용 계정</b>에만 둡니다.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= MAIN DIAGRAM ================= -->
+  <section>
+    <div class="section-head">
+      <div class="section-kicker">02 · Architecture</div>
+      <h2>전체 구성도 — AWS · Azure 나란히 비교</h2>
+      <p class="section-desc">왼쪽은 AWS, 오른쪽은 Azure로 동일한 구조를 같은 높이에 배치했습니다. 가운데 점선 칸은 그 줄에서 서로 대응하는 서비스 명칭입니다. 계열사 A는 전 구간(Web·WAS·DB·관리 Zone과 보안장비)을 상세히, 계열사 A의 Stage/Test와 계열사 B는 동일 패턴을 축약해 표시했습니다.</p>
+    </div>
+
+    <div class="legend-strip">
+      <span class="legend-item"><span class="swatch" style="background:var(--shared-soft);border-color:var(--shared-line)"></span>계열사 공통(Shared) 영역</span>
+      <span class="legend-item"><span class="swatch" style="background:var(--ca-soft);border-color:var(--ca-line)"></span>계열사 A 전용 영역</span>
+      <span class="legend-item"><span class="swatch" style="background:var(--cb-soft);border-color:var(--cb-line)"></span>계열사 B 전용 영역</span>
+      <span class="legend-item"><span class="swatch" style="background:var(--sec-soft);border-color:var(--sec)"></span>보안 통제 지점 / 개인신용정보 Zone</span>
+      <span class="legend-item"><span class="swatch" style="background:var(--enc-soft);border-color:var(--enc)"></span>DB 암호화(회사별 개별 키)</span>
+    </div>
+
+    <div class="diagram-shell">
+      <div class="diagram">
+
+        <!-- On-prem -->
+        <div class="onprem-row">
+          <div class="onprem-box">
+            <div class="otitle">그룹 본사 데이터센터 (On-Premise)</div>
+            <div class="osub">통합관제센터(SOC) · 마스터 디렉터리(AD) · 계열사 통합 백업 아카이브</div>
+          </div>
+        </div>
+
+        <!-- link to two clouds -->
+        <div class="link-row">
+          <div class="link-col">
+            <div class="link-line"></div>
+            <div class="link-label">전용회선(이중화) · AWS Direct Connect</div>
+            <div class="link-block">인터넷 미경유 · 폐쇄망</div>
+          </div>
+          <div></div>
+          <div class="link-col">
+            <div class="link-line"></div>
+            <div class="link-label">전용회선(이중화) · Azure ExpressRoute</div>
+            <div class="link-block">인터넷 미경유 · 폐쇄망</div>
+          </div>
+        </div>
+
+        <div class="clouds-grid">
+
+          <!-- row: cloud header -->
+          <div class="cloud-header aws"><span>Amazon Web Services</span><span class="ctag">전용회선 종단 · Direct Connect Gateway</span></div>
+          <div class="spine-cell"><div class="spine-inner"><span class="t">전용회선</span><br>Direct Connect ↔ ExpressRoute</div></div>
+          <div class="cloud-header azure"><span>Microsoft Azure</span><span class="ctag">전용회선 종단 · ExpressRoute Gateway</span></div>
+
+          <!-- row: shared account -->
+          <div class="acct-box shared">
+            <div class="acct-head"><span class="acct-name">계열사 공통(Shared Services) Account</span></div>
+            <div class="item-row"><span class="pill">공통망(Common Network) VPC 10.0.0.0/16</span><span class="pill">전 계열사 VPC와 Peering/Attachment</span></div>
+            <div class="shared-list">
+              <div class="shared-item"><span class="k">네트워크 허브</span><span class="v">Transit Gateway — 회사별 VPC를 개별 Attachment로 연결, 회사 간 라우팅 차단</span></div>
+              <div class="shared-item"><span class="k">통합 인증</span><span class="v">IAM Identity Center(SSO) — 계열사 공통 디렉터리 연동</span></div>
+              <div class="shared-item"><span class="k">통합 관제(SOC)</span><span class="v">GuardDuty + Security Hub + CloudTrail Org Trail</span></div>
+              <div class="shared-item"><span class="k">공통 관리 서비스</span><span class="v">패치 배포 서버 · 백신 관리 콘솔 · 통합 백업(AWS Backup Vault)</span></div>
+              <div class="shared-item"><span class="k">암호화 정책 루트</span><span class="v">KMS — 서비스는 공통, <b style="color:var(--enc)">회사별 CMK는 완전 분리 발급</b></span></div>
+              <div class="shared-item"><span class="k">경계 보안</span><span class="v">Network Firewall(IPS/IDS) — Hub 진입점 1곳에 통합 배치</span></div>
+            </div>
+          </div>
+          <div class="spine-cell"><div class="spine-inner"><span class="t">공통 계정</span><br>Account ↔ Subscription<br>Identity Center ↔ Entra ID<br>GuardDuty+Security Hub ↔ Defender+Sentinel</div></div>
+          <div class="acct-box shared">
+            <div class="acct-head"><span class="acct-name">계열사 공통(Shared Services) Subscription</span></div>
+            <div class="item-row"><span class="pill">공통망(Common Network) VNet 10.0.0.0/16</span><span class="pill">전 계열사 VNet과 Hub-Spoke Peering</span></div>
+            <div class="shared-list">
+              <div class="shared-item"><span class="k">네트워크 허브</span><span class="v">Virtual WAN Hub — 회사별 VNet을 개별 연결(Hub-Spoke), 회사 간 라우팅 차단</span></div>
+              <div class="shared-item"><span class="k">통합 인증</span><span class="v">Microsoft Entra ID(SSO) — 계열사 공통 테넌트 연동</span></div>
+              <div class="shared-item"><span class="k">통합 관제(SOC)</span><span class="v">Microsoft Defender for Cloud + Sentinel + Activity Log</span></div>
+              <div class="shared-item"><span class="k">공통 관리 서비스</span><span class="v">Update Manager · 백신 관리 콘솔 · 통합 백업(Recovery Services Vault)</span></div>
+              <div class="shared-item"><span class="k">암호화 정책 루트</span><span class="v">Key Vault — 서비스는 공통, <b style="color:var(--enc)">회사별 Key는 완전 분리 발급</b></span></div>
+              <div class="shared-item"><span class="k">경계 보안</span><span class="v">Azure Firewall(IPS/IDS) — Hub 진입점 1곳에 통합 배치</span></div>
+            </div>
+          </div>
+
+          <!-- row: company A production (full detail) -->
+          <div class="acct-box ca">
+            <div class="acct-head">
+              <span class="acct-name">계열사 A — Production Account</span>
+              <span class="env-tag prod">PROD · 실 개인신용정보</span>
+            </div>
+            <div class="item-row"><span class="pill co-a">VPC 10.10.0.0/16</span><span class="pill">Multi-AZ 이중화</span><span class="pill">전용 VIF(Virtual Interface) A</span></div>
+            <div class="zone-stack">
+              <div class="zone-row">
+                <div class="zhead"><span class="zone-label">Web Zone</span><span class="zone-svc">ALB(내부) + EC2 웹서버</span></div>
+                <div class="item-row"><span class="pill sec">AWS WAF</span><span class="pill sec">Security Group</span><span class="pill sec">Network Firewall(IPS)</span></div>
+              </div>
+              <div class="zone-arrow">↓ 이 계층만 통과 (계층 건너뛰기 차단)</div>
+              <div class="zone-row">
+                <div class="zhead"><span class="zone-label">WAS Zone</span><span class="zone-svc">EC2 / ECS 애플리케이션 서버</span></div>
+                <div class="item-row"><span class="pill sec">Session Manager(서버접근통제)</span><span class="pill sec">백신 Agent</span><span class="pill sec">DAM Agent(쿼리 감사)</span></div>
+              </div>
+              <div class="zone-arrow">↓</div>
+              <div class="zone-row db">
+                <div class="zhead"><span class="zone-label">DB Zone · 개인신용정보</span><span class="zone-svc">Amazon Aurora(회사 A 전용 인스턴스)</span></div>
+                <div class="item-row"><span class="pill enc">KMS CMK — A사 전용키</span><span class="pill sec">DAM(DB 접근통제)</span><span class="pill sec">컬럼 암호화</span></div>
+              </div>
+              <div class="zone-row">
+                <div class="zhead"><span class="zone-label">관리 Zone</span><span class="zone-svc">Bastion 연동 · 로그 Agent · Systems Manager</span></div>
+                <div class="item-row"><span class="pill sec">PAM 연동</span><span class="pill sec">CloudWatch Agent</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="spine-cell"><div class="spine-inner"><span class="t">네트워크</span><br>VPC ↔ VNet · SG ↔ NSG<br>ALB ↔ App Gateway<br>Aurora/RDS ↔ Azure SQL MI<br>KMS ↔ Key Vault · Session Manager ↔ Bastion</div></div>
+          <div class="acct-box ca">
+            <div class="acct-head">
+              <span class="acct-name">계열사 A — Production Subscription</span>
+              <span class="env-tag prod">PROD · 실 개인신용정보</span>
+            </div>
+            <div class="item-row"><span class="pill co-a">VNet 10.20.0.0/16</span><span class="pill">가용성 영역 이중화</span><span class="pill">전용 ExpressRoute Circuit A</span></div>
+            <div class="zone-stack">
+              <div class="zone-row">
+                <div class="zhead"><span class="zone-label">Web Zone</span><span class="zone-svc">Application Gateway(내부) + VM 웹서버</span></div>
+                <div class="item-row"><span class="pill sec">Azure WAF</span><span class="pill sec">NSG</span><span class="pill sec">Azure Firewall(IPS)</span></div>
+              </div>
+              <div class="zone-arrow">↓ 이 계층만 통과 (계층 건너뛰기 차단)</div>
+              <div class="zone-row">
+                <div class="zhead"><span class="zone-label">WAS Zone</span><span class="zone-svc">VM / App Service 애플리케이션 서버</span></div>
+                <div class="item-row"><span class="pill sec">Azure Bastion(서버접근통제)</span><span class="pill sec">백신 Agent</span><span class="pill sec">DAM Agent(쿼리 감사)</span></div>
+              </div>
+              <div class="zone-arrow">↓</div>
+              <div class="zone-row db">
+                <div class="zhead"><span class="zone-label">DB Zone · 개인신용정보</span><span class="zone-svc">Azure SQL Managed Instance(회사 A 전용 인스턴스)</span></div>
+                <div class="item-row"><span class="pill enc">Key Vault Key — A사 전용키</span><span class="pill sec">DAM(DB 접근통제)</span><span class="pill sec">Always Encrypted</span></div>
+              </div>
+              <div class="zone-row">
+                <div class="zhead"><span class="zone-label">관리 Zone</span><span class="zone-svc">Bastion 연동 · 로그 Agent · Update Manager</span></div>
+                <div class="item-row"><span class="pill sec">PAM 연동</span><span class="pill sec">Azure Monitor Agent</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- row: company A stage/test compact -->
+          <div class="acct-box ca">
+            <div class="acct-head"><span class="acct-name">계열사 A — Stage / Test Account</span></div>
+            <div class="env-cards-wrap">
+              <div class="env-card">
+                <div class="acct-head"><span class="acct-name" style="font-size:12.5px">Stage Account</span><span class="env-tag stage">STAGE</span></div>
+                <div class="mini-bar"><span class="w1"></span><span class="w2"></span><span class="w3"></span></div>
+                <div class="env-note">Prod와 별도 VPC(Peering 없음) · Web/WAS/DB Zone 동일 구조 축소 적용 · DB는 별도 인스턴스 + <span class="pill enc" style="padding:1px 6px">별도키</span> · 데이터는 마스킹 처리</div>
+              </div>
+              <div class="env-card">
+                <div class="acct-head"><span class="acct-name" style="font-size:12.5px">Test/Dev Account</span><span class="env-tag test">TEST</span></div>
+                <div class="mini-bar"><span class="w1"></span><span class="w2"></span><span class="w3"></span></div>
+                <div class="env-note">Prod 데이터 접근 원천 차단 · 별도 VPC + 별도 DB 인스턴스 + <span class="pill enc" style="padding:1px 6px">별도키</span> · 개발용 더미 데이터만 사용</div>
+              </div>
+            </div>
+          </div>
+          <div class="spine-cell"><div class="spine-inner"><span class="t">환경 격리</span><br>별도 Account ↔ 별도 Subscription<br>(Prod와 Peering 미연결)</div></div>
+          <div class="acct-box ca">
+            <div class="acct-head"><span class="acct-name">계열사 A — Stage / Test Subscription</span></div>
+            <div class="env-cards-wrap">
+              <div class="env-card">
+                <div class="acct-head"><span class="acct-name" style="font-size:12.5px">Stage Subscription</span><span class="env-tag stage">STAGE</span></div>
+                <div class="mini-bar"><span class="w1"></span><span class="w2"></span><span class="w3"></span></div>
+                <div class="env-note">Prod와 별도 VNet(Peering 없음) · Web/WAS/DB Zone 동일 구조 축소 적용 · DB는 별도 인스턴스 + <span class="pill enc" style="padding:1px 6px">별도키</span> · 데이터는 마스킹 처리</div>
+              </div>
+              <div class="env-card">
+                <div class="acct-head"><span class="acct-name" style="font-size:12.5px">Test/Dev Subscription</span><span class="env-tag test">TEST</span></div>
+                <div class="mini-bar"><span class="w1"></span><span class="w2"></span><span class="w3"></span></div>
+                <div class="env-note">Prod 데이터 접근 원천 차단 · 별도 VNet + 별도 DB 인스턴스 + <span class="pill enc" style="padding:1px 6px">별도키</span> · 개발용 더미 데이터만 사용</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- row: company B (condensed all 3 envs) -->
+          <div class="acct-box cb">
+            <div class="acct-head"><span class="acct-name">계열사 B — Account 그룹</span></div>
+            <div class="item-row"><span class="pill co-b">전용 VIF(Virtual Interface) B</span><span class="pill">A사와 동일 Zone 구조 반복</span></div>
+            <div class="env-cards-wrap">
+              <div class="env-card"><div class="acct-head"><span class="acct-name" style="font-size:12.5px">Production</span><span class="env-tag prod">PROD</span></div><div class="mini-bar"><span class="w1"></span><span class="w2"></span><span class="w3"></span></div><div class="env-note">Web/WAS/DB/관리 4-Zone 전체 구성 · DB: Aurora(B사 전용) + <span class="pill enc" style="padding:1px 6px">KMS B사 전용키</span></div></div>
+              <div class="env-card"><div class="acct-head"><span class="acct-name" style="font-size:12.5px">Stage</span><span class="env-tag stage">STAGE</span></div><div class="mini-bar"><span class="w1"></span><span class="w2"></span><span class="w3"></span></div><div class="env-note">별도 VPC · 마스킹 데이터 · 별도 DB 인스턴스/키</div></div>
+              <div class="env-card"><div class="acct-head"><span class="acct-name" style="font-size:12.5px">Test</span><span class="env-tag test">TEST</span></div><div class="mini-bar"><span class="w1"></span><span class="w2"></span><span class="w3"></span></div><div class="env-note">Prod 데이터 접근 차단 · 별도 DB 인스턴스/키</div></div>
+            </div>
+          </div>
+          <div class="spine-cell"><div class="spine-inner"><span class="t">회사 간 격리</span><br>Hub 라우팅 테이블에서<br>A↔B 직접 통신 차단</div></div>
+          <div class="acct-box cb">
+            <div class="acct-head"><span class="acct-name">계열사 B — Subscription 그룹</span></div>
+            <div class="item-row"><span class="pill co-b">전용 ExpressRoute Circuit B</span><span class="pill">A사와 동일 Zone 구조 반복</span></div>
+            <div class="env-cards-wrap">
+              <div class="env-card"><div class="acct-head"><span class="acct-name" style="font-size:12.5px">Production</span><span class="env-tag prod">PROD</span></div><div class="mini-bar"><span class="w1"></span><span class="w2"></span><span class="w3"></span></div><div class="env-note">Web/WAS/DB/관리 4-Zone 전체 구성 · DB: Azure SQL MI(B사 전용) + <span class="pill enc" style="padding:1px 6px">Key Vault B사 전용키</span></div></div>
+              <div class="env-card"><div class="acct-head"><span class="acct-name" style="font-size:12.5px">Stage</span><span class="env-tag stage">STAGE</span></div><div class="mini-bar"><span class="w1"></span><span class="w2"></span><span class="w3"></span></div><div class="env-note">별도 VNet · 마스킹 데이터 · 별도 DB 인스턴스/키</div></div>
+              <div class="env-card"><div class="acct-head"><span class="acct-name" style="font-size:12.5px">Test</span><span class="env-tag test">TEST</span></div><div class="mini-bar"><span class="w1"></span><span class="w2"></span><span class="w3"></span></div><div class="env-note">Prod 데이터 접근 차단 · 별도 DB 인스턴스/키</div></div>
+            </div>
+          </div>
+
+          <div class="more-note">⋯ 계열사 C, D … N — 위와 동일한 「전용 회선 + 전용 VPC/VNet + Prod·Stage·Test 3계정 + 4-Zone」 패턴을 반복 구성</div>
+          <div></div>
+          <div class="more-note">⋯ 계열사 C, D … N — 위와 동일한 「전용 회선 + 전용 VNet + Prod·Stage·Test 3구독 + 4-Zone」 패턴을 반복 구성</div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= COMMON NETWORK FIGURE ================= -->
+  <section>
+    <div class="section-head">
+      <div class="section-kicker">03 · Common Network</div>
+      <h2>계열사 공통망 ↔ 계열사망 연결도</h2>
+      <p class="section-desc">계열사망은 서로 직접 연결되지 않습니다. 모든 계열사망은 <b>그룹 공통망(Common Network Zone)</b> 하나만을 거쳐 본사·다른 계열사·인터넷과의 관계를 맺으며, 공통망의 라우팅 테이블 자체에 계열사 간 경로가 존재하지 않도록 구성합니다.</p>
+    </div>
+
+    <div class="criteria-grid">
+      <div class="criteria-card">
+        <div class="criteria-num">연결 방식</div>
+        <div class="criteria-title">계열사망 ↔ 공통망</div>
+        <div class="criteria-text">계열사별 VPC/VNet은 <b>Transit Gateway Attachment(AWS) / Virtual WAN Hub 연결(Azure)</b> 1개로만 공통망에 연결합니다. 연결 지점에는 방화벽 정책과 허용 포트 화이트리스트를 적용합니다.</div>
+      </div>
+      <div class="criteria-card">
+        <div class="criteria-num">차단 원칙</div>
+        <div class="criteria-title">계열사 간 직접 연결 금지</div>
+        <div class="criteria-text">A사 ↔ B사 VPC/VNet Peering은 <b>어떤 경우에도 생성하지 않습니다.</b> 계열사 간 데이터 연계가 필요하면 공통망의 연계 서버(Zone)를 경유하는 승인된 API만 허용합니다.</div>
+      </div>
+      <div class="criteria-card">
+        <div class="criteria-num">공통망 보안</div>
+        <div class="criteria-title">공통망 자체도 통제 대상</div>
+        <div class="criteria-text">공통망은 여러 계열사가 드나드는 접점이므로 <b>Network Firewall/Azure Firewall(IPS)을 이중화 배치</b>하고, 공통망 관리 권한은 그룹 통합 보안관제팀만 보유합니다.</div>
+      </div>
+    </div>
+
+    <figure class="diagram-fig">
+      <div class="fig-shell">
+        <svg viewBox="0 0 1000 470" role="img" aria-label="그룹 본사는 전용회선으로 그룹 공통망에 연결되고, 계열사 A망·B망·N망은 각각 공통망 한 곳에만 연결되며, 계열사 네트워크끼리는 직접 연결 없이 라우팅이 차단되어 있음을 보여주는 다이어그램">
+          <defs>
+            <marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+            </marker>
+          </defs>
+          <g font-family="IBM Plex Mono, monospace" font-size="12.5">
+            <!-- on-prem -->
+            <rect x="370" y="16" width="260" height="52" rx="8" fill="none" stroke="currentColor" stroke-width="1.4"/>
+            <text x="500" y="38" text-anchor="middle" fill="currentColor" font-weight="700">그룹 본사(On-Premise)</text>
+            <text x="500" y="55" text-anchor="middle" fill="currentColor" font-size="10.5">SOC · 마스터 AD</text>
+
+            <!-- common network -->
+            <rect x="300" y="150" width="400" height="98" rx="10" fill="var(--shared-soft)" stroke="var(--shared-line)" stroke-width="1.6"/>
+            <text x="500" y="176" text-anchor="middle" fill="var(--shared)" font-weight="700" font-size="14">그룹 공통망(Common Network Zone)</text>
+            <text x="500" y="196" text-anchor="middle" fill="currentColor" font-size="10.5">Transit Gateway / Virtual WAN Hub</text>
+            <text x="500" y="212" text-anchor="middle" fill="currentColor" font-size="10.5">통합인증 · SIEM · 공통 백신배포 · 공통 백업</text>
+            <text x="500" y="230" text-anchor="middle" fill="var(--sec)" font-size="10.5">경계 Network/Azure Firewall(IPS) 이중화</text>
+
+            <!-- affiliates -->
+            <rect x="40" y="330" width="240" height="76" rx="8" fill="var(--ca-soft)" stroke="var(--ca-line)" stroke-width="1.4"/>
+            <text x="160" y="358" text-anchor="middle" fill="var(--ca)" font-weight="700">계열사 A망</text>
+            <text x="160" y="376" text-anchor="middle" fill="currentColor" font-size="10.5">VPC/VNet · Prod·Stage·Test</text>
+            <text x="160" y="392" text-anchor="middle" fill="currentColor" font-size="10.5">전용 VIF / Circuit A</text>
+
+            <rect x="380" y="330" width="240" height="76" rx="8" fill="var(--cb-soft)" stroke="var(--cb-line)" stroke-width="1.4"/>
+            <text x="500" y="358" text-anchor="middle" fill="var(--cb)" font-weight="700">계열사 B망</text>
+            <text x="500" y="376" text-anchor="middle" fill="currentColor" font-size="10.5">VPC/VNet · Prod·Stage·Test</text>
+            <text x="500" y="392" text-anchor="middle" fill="currentColor" font-size="10.5">전용 VIF / Circuit B</text>
+
+            <rect x="720" y="330" width="240" height="76" rx="8" fill="var(--surface-3)" stroke="var(--border-strong)" stroke-width="1.4"/>
+            <text x="840" y="358" text-anchor="middle" fill="currentColor" font-weight="700">계열사 N망</text>
+            <text x="840" y="376" text-anchor="middle" fill="currentColor" font-size="10.5">⋯ 동일 패턴 반복</text>
+            <text x="840" y="392" text-anchor="middle" fill="currentColor" font-size="10.5">전용 VIF / Circuit N</text>
+          </g>
+
+          <!-- onprem -> common -->
+          <line x1="500" y1="68" x2="500" y2="148" stroke="currentColor" stroke-width="1.4" marker-end="url(#arrow2)"/>
+          <text x="514" y="112" font-size="10.5" fill="var(--ink-muted)" font-family="IBM Plex Mono, monospace">전용회선(이중화)</text>
+
+          <!-- common -> affiliates -->
+          <line x1="420" y1="248" x2="200" y2="328" stroke="currentColor" stroke-width="1.4" marker-end="url(#arrow2)"/>
+          <line x1="500" y1="248" x2="500" y2="328" stroke="currentColor" stroke-width="1.4" marker-end="url(#arrow2)"/>
+          <line x1="580" y1="248" x2="800" y2="328" stroke="currentColor" stroke-width="1.4" marker-end="url(#arrow2)"/>
+          <text x="270" y="288" font-size="10" fill="var(--ink-muted)" font-family="IBM Plex Mono, monospace" text-anchor="middle">Attachment</text>
+          <text x="514" y="288" font-size="10" fill="var(--ink-muted)" font-family="IBM Plex Mono, monospace">+ 방화벽 정책</text>
+          <text x="730" y="288" font-size="10" fill="var(--ink-muted)" font-family="IBM Plex Mono, monospace" text-anchor="middle">Attachment</text>
+
+          <!-- blocked direct links between affiliates -->
+          <line x1="280" y1="368" x2="380" y2="368" stroke="var(--block)" stroke-width="1.4" stroke-dasharray="5 4"/>
+          <text x="330" y="360" text-anchor="middle" font-size="9.5" fill="var(--block)" font-family="IBM Plex Mono, monospace">직접연결 없음</text>
+          <line x1="620" y1="368" x2="720" y2="368" stroke="var(--block)" stroke-width="1.4" stroke-dasharray="5 4"/>
+          <text x="670" y="360" text-anchor="middle" font-size="9.5" fill="var(--block)" font-family="IBM Plex Mono, monospace">직접연결 없음</text>
+          <text x="330" y="424" text-anchor="middle" font-size="10.5" fill="var(--block)" font-family="IBM Plex Mono, monospace">계열사 간 Peering 미생성 · 라우팅 테이블에 상호 경로 없음</text>
+        </svg>
+      </div>
+      <figcaption>모든 계열사망은 그룹 공통망 하나만을 거쳐 본사와 연결됩니다. 계열사망 사이의 점선은 실제로 존재하는 링크가 아니라 "연결이 없다"는 것을 나타냅니다 — 라우팅 테이블 자체에 계열사 간 경로가 없습니다.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ================= TERM MAPPING TABLE ================= -->
+  <section>
+    <div class="section-head">
+      <div class="section-kicker">04 · Terminology</div>
+      <h2>AWS ↔ Azure 명칭 비교표</h2>
+      <p class="section-desc">위 구성도에서 같은 줄에 배치된 요소들의 정식 서비스명입니다. 제안서·심사 대응 문서 작성 시 그대로 인용할 수 있습니다.</p>
+    </div>
+    <div class="table-scroll">
+      <table class="cmp">
+        <caption>기능별 AWS / Azure 서비스 명칭 대응표</caption>
+        <thead>
+          <tr><th>구분</th><th>AWS 명칭</th><th>Azure 명칭</th><th>이 구성도에서의 역할</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="cat">최상위 격리</td><td class="aws-cell">Account</td><td class="azure-cell">Subscription</td><td class="role">회사·환경별 최상위 격리 단위(과금·권한 분리)</td></tr>
+          <tr><td class="cat">그룹 거버넌스</td><td class="aws-cell">Organizations + SCP</td><td class="azure-cell">Management Group + Azure Policy</td><td class="role">계열사 전체에 폐쇄망·태깅 등 가드레일 강제 배포</td></tr>
+          <tr><td class="cat">가상 네트워크</td><td class="aws-cell">VPC</td><td class="azure-cell">VNet</td><td class="role">회사별 네트워크 격리 단위</td></tr>
+          <tr><td class="cat">네트워크 Zone</td><td class="aws-cell">Subnet</td><td class="azure-cell">Subnet</td><td class="role">Web / WAS / DB / 관리 계층 분리</td></tr>
+          <tr><td class="cat">인스턴스 방화벽</td><td class="aws-cell">Security Group</td><td class="azure-cell">NSG(Network Security Group)</td><td class="role">서버 단위 최소권한 통신 규칙</td></tr>
+          <tr><td class="cat">전용회선</td><td class="aws-cell">Direct Connect</td><td class="azure-cell">ExpressRoute</td><td class="role">그룹 데이터센터 ↔ 클라우드 폐쇄 연결(인터넷 미경유)</td></tr>
+          <tr><td class="cat">사내망 허브</td><td class="aws-cell">Transit Gateway</td><td class="azure-cell">Virtual WAN Hub</td><td class="role">계열사별 VPC/VNet을 하나의 허브로 집중 연결, 상호 라우팅 통제</td></tr>
+          <tr><td class="cat">통합 인증(SSO)</td><td class="aws-cell">IAM Identity Center</td><td class="azure-cell">Microsoft Entra ID</td><td class="role">계열사 공통 계정·SSO 통합관리</td></tr>
+          <tr><td class="cat">접근 권한</td><td class="aws-cell">IAM Role / Policy</td><td class="azure-cell">Azure RBAC</td><td class="role">최소권한 원칙 적용</td></tr>
+          <tr><td class="cat">권한 임시승격</td><td class="aws-cell">IAM Roles Anywhere / STS</td><td class="azure-cell">Privileged Identity Management(PIM)</td><td class="role">특권 권한 Just-In-Time 승격</td></tr>
+          <tr><td class="cat">서버 원격접속</td><td class="aws-cell">Systems Manager Session Manager</td><td class="azure-cell">Azure Bastion</td><td class="role">SSH/RDP 직접 노출 없이 관리자 접속(접근통제 핵심)</td></tr>
+          <tr><td class="cat">웹방화벽</td><td class="aws-cell">AWS WAF</td><td class="azure-cell">Azure WAF(Application Gateway)</td><td class="role">웹 공격(SQLi/XSS 등) 차단</td></tr>
+          <tr><td class="cat">경계 방화벽/IPS</td><td class="aws-cell">Network Firewall</td><td class="azure-cell">Azure Firewall</td><td class="role">Hub 진입점의 통합 침입탐지·차단</td></tr>
+          <tr><td class="cat">위협 탐지</td><td class="aws-cell">GuardDuty</td><td class="azure-cell">Microsoft Defender for Cloud</td><td class="role">이상행위·악성코드·계정탈취 탐지</td></tr>
+          <tr><td class="cat">통합 로그/SIEM</td><td class="aws-cell">CloudTrail + Security Hub</td><td class="azure-cell">Azure Monitor + Microsoft Sentinel</td><td class="role">계열사 공통 SOC로 통합 수집·상관분석</td></tr>
+          <tr><td class="cat">데이터베이스</td><td class="aws-cell">Amazon Aurora / RDS</td><td class="azure-cell">Azure SQL Managed Instance</td><td class="role">회사·환경별 전용 DB 인스턴스</td></tr>
+          <tr><td class="cat">DB 암호화 키</td><td class="aws-cell">KMS(Customer Managed Key)</td><td class="azure-cell">Key Vault(Key)</td><td class="role">회사별 별도 발급, 계열사 간 절대 미공유</td></tr>
+          <tr><td class="cat">비밀정보 관리</td><td class="aws-cell">Secrets Manager</td><td class="azure-cell">Key Vault(Secrets)</td><td class="role">DB 접속정보 등 자격증명 보관</td></tr>
+          <tr><td class="cat">개인정보 탐지</td><td class="aws-cell">Amazon Macie</td><td class="azure-cell">Microsoft Purview</td><td class="role">개인신용정보 소재 스캔·분류·DLP</td></tr>
+          <tr><td class="cat">오브젝트 스토리지</td><td class="aws-cell">S3</td><td class="azure-cell">Blob Storage</td><td class="role">로그·백업 저장(버전관리·불변 스토리지 적용)</td></tr>
+          <tr><td class="cat">백업</td><td class="aws-cell">AWS Backup</td><td class="azure-cell">Azure Backup(Recovery Services Vault)</td><td class="role">계열사 공통 백업 정책 관리</td></tr>
+          <tr><td class="cat">취약점 관리</td><td class="aws-cell">Inspector</td><td class="azure-cell">Defender for Cloud(취약점 평가)</td><td class="role">정기 취약점 점검 및 조치 추적</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= ACCESS CONTROL FIGURE ================= -->
+  <section>
+    <div class="section-head">
+      <div class="section-kicker">05 · Access Control</div>
+      <h2>접근 통제 방안</h2>
+      <p class="section-desc">관리자·운영자는 어떤 경우에도 서버·DB에 직접 접속할 수 없습니다. 반드시 망분리 전용단말 → 그룹 공통 Bastion → 대상 서버 순서를 거치며, DB는 별도로 DAM(DB 접근통제)을 한 번 더 경유합니다.</p>
+    </div>
+    <figure class="diagram-fig">
+      <div class="fig-shell">
+        <svg viewBox="0 0 980 300" role="img" aria-label="관리자 PC는 인터넷 및 서버에 직접 접속할 수 없고, 망분리 전용단말과 VDI를 거쳐 그룹 공통 Bastion에서 MFA와 PAM 승인 후에만 Web/WAS 서버에 접속하며, DB 접속은 WAS에서 DAM 감사를 한 번 더 거친다는 것을 보여주는 다이어그램">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+            </marker>
+            <marker id="arrowBlock" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--block)"/>
+            </marker>
+          </defs>
+
+          <!-- boxes -->
+          <g font-family="IBM Plex Mono, monospace" font-size="12.5">
+            <!-- general PC blocked -->
+            <rect x="20" y="20" width="150" height="46" rx="7" fill="none" stroke="var(--block)" stroke-width="1.4"/>
+            <text x="95" y="40" text-anchor="middle" fill="currentColor">일반 업무 PC</text>
+            <text x="95" y="56" text-anchor="middle" fill="var(--block)" font-size="10.5">/ 외부 인터넷</text>
+
+            <!-- admin PC -->
+            <rect x="20" y="120" width="150" height="46" rx="7" fill="none" stroke="currentColor" stroke-width="1.4"/>
+            <text x="95" y="140" text-anchor="middle" fill="currentColor">관리자 PC</text>
+            <text x="95" y="156" text-anchor="middle" fill="currentColor" font-size="10.5">(망분리 전용단말)</text>
+
+            <!-- VDI -->
+            <rect x="250" y="120" width="140" height="46" rx="7" fill="none" stroke="currentColor" stroke-width="1.4"/>
+            <text x="320" y="140" text-anchor="middle" fill="currentColor">VDI</text>
+            <text x="320" y="156" text-anchor="middle" fill="currentColor" font-size="10.5">가상 데스크톱</text>
+
+            <!-- Bastion -->
+            <rect x="470" y="120" width="210" height="60" rx="7" fill="var(--shared-soft)" stroke="var(--shared-line)" stroke-width="1.4"/>
+            <text x="575" y="142" text-anchor="middle" fill="var(--shared)" font-weight="700">그룹 공통 Bastion</text>
+            <text x="575" y="158" text-anchor="middle" fill="currentColor" font-size="10.5">Session Manager / Azure Bastion</text>
+            <text x="575" y="172" text-anchor="middle" fill="currentColor" font-size="10.5">+ PAM 체크아웃 · MFA</text>
+
+            <!-- target Web/WAS -->
+            <rect x="770" y="90" width="190" height="46" rx="7" fill="var(--sec-soft)" stroke="var(--sec)" stroke-width="1.4"/>
+            <text x="865" y="110" text-anchor="middle" fill="var(--sec)" font-weight="700">대상 서버</text>
+            <text x="865" y="126" text-anchor="middle" fill="currentColor" font-size="10.5">Web / WAS Zone</text>
+
+            <!-- DAM -->
+            <rect x="770" y="170" width="190" height="46" rx="7" fill="var(--enc-soft)" stroke="var(--enc)" stroke-width="1.4"/>
+            <text x="865" y="190" text-anchor="middle" fill="var(--enc)" font-weight="700">DAM 감사</text>
+            <text x="865" y="206" text-anchor="middle" fill="currentColor" font-size="10.5">DB 접근통제(쿼리 로깅)</text>
+
+            <!-- DB -->
+            <rect x="770" y="240" width="190" height="46" rx="7" fill="var(--sec-soft)" stroke="var(--sec)" stroke-width="1.4"/>
+            <text x="865" y="260" text-anchor="middle" fill="var(--sec)" font-weight="700">DB Zone</text>
+            <text x="865" y="276" text-anchor="middle" fill="currentColor" font-size="10.5">개인신용정보 · 암호화</text>
+          </g>
+
+          <!-- arrows -->
+          <line x1="170" y1="143" x2="248" y2="143" stroke="currentColor" stroke-width="1.4" marker-end="url(#arrow)"/>
+          <line x1="390" y1="145" x2="468" y2="145" stroke="currentColor" stroke-width="1.4" marker-end="url(#arrow)"/>
+          <line x1="680" y1="135" x2="768" y2="113" stroke="currentColor" stroke-width="1.4" marker-end="url(#arrow)"/>
+          <line x1="865" y1="136" x2="865" y2="168" stroke="var(--enc)" stroke-width="1.4" marker-end="url(#arrow)"/>
+          <text x="900" y="156" font-size="10.5" fill="var(--ink-muted)" font-family="IBM Plex Mono, monospace">DB 호출 시</text>
+          <line x1="865" y1="216" x2="865" y2="238" stroke="var(--enc)" stroke-width="1.4" marker-end="url(#arrow)"/>
+
+          <!-- blocked line: general PC -> target -->
+          <line x1="170" y1="60" x2="768" y2="105" stroke="var(--block)" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#arrowBlock)"/>
+          <text x="420" y="78" text-anchor="middle" font-size="11" fill="var(--block)" font-family="IBM Plex Mono, monospace">직접 접속 차단(SSH/RDP 미노출)</text>
+
+          <text x="320" y="200" text-anchor="middle" font-size="10.5" fill="var(--ink-muted)" font-family="IBM Plex Mono, monospace">인터넷 구간 없음</text>
+        </svg>
+      </div>
+      <figcaption>관리자는 망분리 전용단말 → VDI → 그룹 공통 Bastion(MFA·PAM 승인) 순서로만 서버에 접속할 수 있고, 일반 PC·인터넷에서의 직접 접속은 차단됩니다. DB 접근은 WAS에서 DAM 감사를 한 번 더 거칩니다.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ================= SECURITY APPLIANCE TABLE ================= -->
+  <section>
+    <div class="section-head">
+      <div class="section-kicker">06 · Personal Credit Information</div>
+      <h2>개인신용정보 보호를 위한 보안장비 배치</h2>
+      <p class="section-desc">개인신용정보를 처리하는 시스템이므로 아래 보안 기능을 전 구간에 배치합니다. AWS·Azure 모두 동일한 배치 기준을 적용합니다.</p>
+    </div>
+    <div class="table-scroll">
+      <table class="cmp">
+        <caption>Zone별 보안장비 · 보안서비스 배치</caption>
+        <thead>
+          <tr><th>배치 위치</th><th>보안 기능</th><th>AWS</th><th>Azure</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="cat">Hub(경계)</td><td class="role">침입방지·차단 방화벽(IPS/IDS)</td><td class="aws-cell">Network Firewall + GuardDuty</td><td class="azure-cell">Azure Firewall + Defender(NVA 연계)</td></tr>
+          <tr><td class="cat">Web Zone</td><td class="role">웹방화벽(WAF)</td><td class="aws-cell">AWS WAF</td><td class="azure-cell">Azure WAF(Application Gateway)</td></tr>
+          <tr><td class="cat">WAS Zone</td><td class="role">서버 접근통제 + 백신</td><td class="aws-cell">Session Manager + 3rd-party 백신 Agent</td><td class="azure-cell">Azure Bastion + 3rd-party 백신 Agent</td></tr>
+          <tr><td class="cat">DB Zone</td><td class="role">DB 암호화(저장데이터)</td><td class="aws-cell">KMS CMK(회사별) + 컬럼 암호화</td><td class="azure-cell">Key Vault Key(회사별) + Always Encrypted</td></tr>
+          <tr><td class="cat">DB Zone</td><td class="role">DB 접근통제(DAM)</td><td class="role" colspan="2" style="font-family:var(--font-mono);color:var(--shared)">3rd-party DAM 어플라이언스(예: Guardium/Imperva) — 양쪽 클라우드 공통 적용</td></tr>
+          <tr><td class="cat">전 구간</td><td class="role">개인정보 탐지 / DLP</td><td class="aws-cell">Amazon Macie</td><td class="azure-cell">Microsoft Purview</td></tr>
+          <tr><td class="cat">전 구간</td><td class="role">통합 로그 / SIEM</td><td class="aws-cell">CloudTrail + Security Hub</td><td class="azure-cell">Azure Monitor + Sentinel</td></tr>
+          <tr><td class="cat">관리 Zone</td><td class="role">특권계정관리(PAM)</td><td class="role" colspan="2" style="font-family:var(--font-mono);color:var(--shared)">3rd-party PAM 솔루션 — 계열사 공통 1식 적용, 세션 녹화·체크아웃 방식</td></tr>
+          <tr><td class="cat">전 구간</td><td class="role">취약점 점검</td><td class="aws-cell">Inspector</td><td class="azure-cell">Defender for Cloud(취약점 평가)</td></tr>
+          <tr><td class="cat">전용회선 구간</td><td class="role">회선 구간 암호화</td><td class="aws-cell">Direct Connect + MACsec/IPSec</td><td class="azure-cell">ExpressRoute + MACsec/IPSec</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= NETWORK SEGMENTATION NOTE ================= -->
+  <section>
+    <div class="section-head">
+      <div class="section-kicker">07 · Network Segmentation</div>
+      <h2>통신 구간 분리 원칙</h2>
+    </div>
+    <div class="criteria-grid">
+      <div class="criteria-card">
+        <div class="criteria-title">본사 ↔ 클라우드</div>
+        <div class="criteria-text">전용회선 자체는 클라우드당 1식이지만, <b>회사별 VIF(AWS) / ExpressRoute Circuit(Azure)</b>로 논리 회선을 나눠 계열사 트래픽을 물리적으로 같은 선로에서도 논리적으로 분리합니다.</div>
+      </div>
+      <div class="criteria-card">
+        <div class="criteria-title">Hub ↔ 계열사 VPC/VNet</div>
+        <div class="criteria-text">Transit Gateway / Virtual WAN Hub의 라우팅 테이블에서 <b>계열사 간 상호 라우팅을 차단</b>합니다. A사 트래픽이 B사 VPC/VNet으로 갈 수 있는 경로 자체가 존재하지 않습니다.</div>
+      </div>
+      <div class="criteria-card">
+        <div class="criteria-title">회사 내부 3-Tier</div>
+        <div class="criteria-text">Web → WAS → DB 순서로만 통신을 허용합니다. Security Group/NSG 규칙에서 <b>Web→DB 직접 통신, 외부→WAS/DB 직접 통신</b>을 명시적으로 차단합니다.</div>
+      </div>
+      <div class="criteria-card">
+        <div class="criteria-title">환경 간 완전 단절</div>
+        <div class="criteria-text">Prod·Stage·Test는 서로 다른 VPC/VNet이며 <b>Peering을 맺지 않습니다.</b> 배포 파이프라인만 계정 경계를 넘나들 수 있고 런타임 트래픽은 넘나들지 않습니다.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SECURITY ZONE OPERATIONS ================= -->
+  <section>
+    <div class="section-head">
+      <div class="section-kicker">08 · Zone Operations</div>
+      <h2>보안 Zone 운영 방안</h2>
+      <p class="section-desc">Zone은 그리는 것으로 끝나지 않습니다. Zone마다 등급(Tier)·운영주체·승인권자·점검주기를 명확히 정해야 실제로 유지됩니다. 아래는 이 구성도의 Zone에 적용하는 운영 기준입니다.</p>
+    </div>
+
+    <div class="table-scroll">
+      <table class="cmp">
+        <caption>Zone별 운영 등급(Tier) 및 책임 체계</caption>
+        <thead>
+          <tr><th>Zone</th><th>통제 등급</th><th>운영 주체</th><th>변경 승인권자</th><th>정기 점검</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="cat">공통망(Common Network)</td><td class="role"><b style="color:var(--sec)">Tier 0</b> · 최고 통제</td><td class="role">그룹 통합 보안관제팀</td><td class="role">그룹 CISO</td><td class="role">상시 모니터링 + 월간 정책 점검</td></tr>
+          <tr><td class="cat">관리(Management) Zone</td><td class="role"><b style="color:var(--sec)">Tier 1</b></td><td class="role">그룹 통합 보안관제팀</td><td class="role">그룹 CISO</td><td class="role">분기 1회 접근권한 재검토</td></tr>
+          <tr><td class="cat">DB Zone(개인신용정보)</td><td class="role"><b style="color:var(--sec)">Tier 1</b></td><td class="role">계열사 정보보호팀 + 그룹 관제 협업</td><td class="role">계열사 정보보호책임자(CISO)</td><td class="role">월간 접근이력 검토 + 분기 취약점 점검</td></tr>
+          <tr><td class="cat">WAS Zone</td><td class="role">Tier 2</td><td class="role">계열사 IT운영팀</td><td class="role">계열사 IT운영팀장</td><td class="role">월간 패치·백신 점검</td></tr>
+          <tr><td class="cat">Web Zone</td><td class="role">Tier 2</td><td class="role">계열사 IT운영팀</td><td class="role">계열사 IT운영팀장</td><td class="role">월간 WAF 룰셋 점검</td></tr>
+          <tr><td class="cat">Stage / Test 환경 전체</td><td class="role">Tier 3</td><td class="role">계열사 개발팀</td><td class="role">계열사 IT운영팀장</td><td class="role">배포 시점 스캔(상시 아님)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-head" style="margin-top:32px;">
+      <h2 style="font-size:17px;">Zone 간 통신 허용 매트릭스</h2>
+      <p class="section-desc">가로축(From)에서 세로축(To) 방향으로의 통신 허용 여부입니다. <span style="color:var(--ca);font-weight:700">허용</span> · <span style="color:var(--enc);font-weight:700">예외 승인 시만(경유 필수)</span> · <span style="color:var(--block);font-weight:700">차단</span></p>
+    </div>
+    <div class="table-scroll">
+      <table class="cmp">
+        <caption>Zone 간 통신 정책 매트릭스</caption>
+        <thead>
+          <tr><th>From ↓ / To →</th><th>Internet</th><th>공통망</th><th>Web</th><th>WAS</th><th>DB</th><th>관리</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="cat">Internet</td><td class="role" style="color:var(--block)">— (구간없음)</td><td class="role" style="color:var(--block)">차단</td><td class="role" style="color:var(--block)">차단</td><td class="role" style="color:var(--block)">차단</td><td class="role" style="color:var(--block)">차단</td><td class="role" style="color:var(--block)">차단</td></tr>
+          <tr><td class="cat">공통망</td><td class="role" style="color:var(--block)">차단</td><td class="role">—</td><td class="role" style="color:var(--enc)">예외(방화벽 정책)</td><td class="role" style="color:var(--block)">차단</td><td class="role" style="color:var(--block)">차단</td><td class="role" style="color:var(--ca)">허용(관제 Agent)</td></tr>
+          <tr><td class="cat">Web Zone</td><td class="role" style="color:var(--block)">차단</td><td class="role" style="color:var(--block)">차단</td><td class="role">—</td><td class="role" style="color:var(--ca)">허용</td><td class="role" style="color:var(--block)">차단</td><td class="role" style="color:var(--block)">차단</td></tr>
+          <tr><td class="cat">WAS Zone</td><td class="role" style="color:var(--block)">차단</td><td class="role" style="color:var(--block)">차단</td><td class="role" style="color:var(--enc)">응답만</td><td class="role">—</td><td class="role" style="color:var(--ca)">허용</td><td class="role" style="color:var(--block)">차단</td></tr>
+          <tr><td class="cat">DB Zone</td><td class="role" style="color:var(--block)">차단</td><td class="role" style="color:var(--block)">차단</td><td class="role" style="color:var(--block)">차단</td><td class="role" style="color:var(--enc)">응답만</td><td class="role">—</td><td class="role" style="color:var(--enc)">예외(DAM 경유)</td></tr>
+          <tr><td class="cat">관리 Zone</td><td class="role" style="color:var(--block)">차단</td><td class="role" style="color:var(--ca)">허용(관제 전용)</td><td class="role" style="color:var(--enc)">예외(Bastion만)</td><td class="role" style="color:var(--enc)">예외(Bastion만)</td><td class="role" style="color:var(--enc)">예외(DAM 경유)</td><td class="role">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-head" style="margin-top:32px;">
+      <h2 style="font-size:17px;">방화벽·라우팅 변경관리 절차</h2>
+    </div>
+    <div class="zone-stack" style="max-width:1000px;">
+      <div class="zone-row"><div class="zhead"><span class="zone-label">1 · 신청</span><span class="zone-svc">계열사 담당자가 변경 요청서(사유·대상 Zone·기간) 제출</span></div></div>
+      <div class="zone-arrow">↓</div>
+      <div class="zone-row"><div class="zhead"><span class="zone-label">2 · 위험성 검토</span><span class="zone-svc">계열사 정보보호팀이 개인신용정보 영향도·최소권한 위배 여부 검토</span></div></div>
+      <div class="zone-arrow">↓</div>
+      <div class="zone-row db"><div class="zhead"><span class="zone-label">3 · 승인</span><span class="zone-svc">Tier 0·1 Zone은 변경관리위원회(그룹 CISO 포함) 사전 승인 필수</span></div></div>
+      <div class="zone-arrow">↓</div>
+      <div class="zone-row"><div class="zhead"><span class="zone-label">4 · 적용</span><span class="zone-svc">그룹 통합 보안관제팀이 직접 적용, 변경 전/후 스냅샷 보관</span></div></div>
+      <div class="zone-arrow">↓</div>
+      <div class="zone-row"><div class="zhead"><span class="zone-label">5 · 사후 검증</span><span class="zone-svc">72시간 이내 이상 트래픽·의도치 않은 허용 여부 재확인, 미비 시 즉시 롤백</span></div></div>
+    </div>
+  </section>
+
+  <!-- ================= COMPLIANCE ================= -->
+  <section>
+    <div class="section-head">
+      <div class="section-kicker">09 · Compliance</div>
+      <h2>금융보안원 가이드라인 · 자체 위험평가(CSA) 준수</h2>
+      <p class="section-desc">이 구성도는 「금융분야 클라우드컴퓨팅서비스 이용 가이드」(금융보안원), 전자금융감독규정, 「신용정보의 이용 및 보호에 관한 법률」의 요구를 반영하는 것을 전제로 하며, 실제 이용 전 아래 절차를 순서대로 거쳐야 합니다.</p>
+    </div>
+
+    <div class="criteria-grid">
+      <div class="criteria-card">
+        <div class="criteria-num">사전 절차 1</div>
+        <div class="criteria-title">내부 정보보호위원회 심의</div>
+        <div class="criteria-text">클라우드 전환 대상 시스템(특히 개인신용정보 처리 시스템)을 <b>그룹 정보보호위원회에서 심의·의결</b>합니다. 본 구성도는 그 심의의 기초 자료로 사용합니다.</div>
+      </div>
+      <div class="criteria-card">
+        <div class="criteria-num">사전 절차 2</div>
+        <div class="criteria-title">CSP 보안인증(CSAP) 확인</div>
+        <div class="criteria-text">이용하려는 AWS/Azure <b>리전·서비스가 클라우드보안인증(CSAP) 등급을 충족</b>하는지 확인하고, 등급이 낮은 서비스는 이용 목록에서 제외하거나 추가 통제를 적용합니다.</div>
+      </div>
+      <div class="criteria-card">
+        <div class="criteria-num">사전 절차 3</div>
+        <div class="criteria-title">중요정보처리시스템 해당 여부</div>
+        <div class="criteria-text">전자금융감독규정상 <b>중요정보처리시스템에 해당</b>하면 금융위원회 사전 보고·신고 절차를 이 아키텍처 확정 전에 완료합니다.</div>
+      </div>
+      <div class="criteria-card">
+        <div class="criteria-num">사전 절차 4</div>
+        <div class="criteria-title">자체 위험평가(CSA) 실시</div>
+        <div class="criteria-text">이전 전 <b>자체 위험평가(Cloud Security Assessment)</b>를 수행하고 결과를 문서화합니다. 아래 표는 평가 영역과 이 구성도의 반영 여부입니다.</div>
+      </div>
+    </div>
+
+    <div class="table-scroll" style="margin-top:20px;">
+      <table class="cmp">
+        <caption>자체 위험평가(CSA) 체크리스트 대응 현황</caption>
+        <thead>
+          <tr><th>평가 영역</th><th>점검 항목</th><th>이 구성도의 반영 방식</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="cat">데이터 소재지</td><td class="role">개인신용정보 저장 리전이 계약·법령상 허용 리전인지</td><td class="role">계열사별 리전 고정 배포 + 회사별 DB 인스턴스 완전 분리</td></tr>
+          <tr><td class="cat">접근통제</td><td class="role">최소권한, MFA, 특권계정관리 적용 여부</td><td class="role">IAM Role/RBAC 최소권한 + PAM + Bastion 경유(05 접근통제 방안)</td></tr>
+          <tr><td class="cat">암호화</td><td class="role">저장·전송 구간 암호화 및 키 관리 주체</td><td class="role">KMS/Key Vault 회사별 키 완전 분리 발급(DB 암호화 분리 원칙)</td></tr>
+          <tr><td class="cat">망분리</td><td class="role">인터넷 구간 차단, 전용회선 사용 여부</td><td class="role">완전 폐쇄망 + Direct Connect/ExpressRoute 이중화</td></tr>
+          <tr><td class="cat">침해사고 대응</td><td class="role">탐지~통보~복구 절차 및 목표시간(SLA)</td><td class="role">공통망 SOC(SIEM 통합) + 보안관제 Tier 0 운영 체계</td></tr>
+          <tr><td class="cat">클라우드 종료(Exit)</td><td class="role">계약 종료·이관 시 데이터 반환·완전삭제 절차</td><td class="role">계약서상 데이터반환권·삭제증적 확보 필요 — <b style="color:var(--sec)">별도 계약조항으로 확정할 것</b></td></tr>
+          <tr><td class="cat">가용성</td><td class="role">CSP의 재해복구·이중화 보장 수준</td><td class="role">Multi-AZ / 가용성 영역(AZ) 이중화 전 계정 적용</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="criteria-grid" style="margin-top:20px;">
+      <div class="criteria-card">
+        <div class="criteria-title">사후관리 1 · 재평가 주기</div>
+        <div class="criteria-text">자체 위험평가는 <b>연 1회 이상</b>, 또는 아키텍처가 실질적으로 변경될 때마다 재실시합니다.</div>
+      </div>
+      <div class="criteria-card">
+        <div class="criteria-title">사후관리 2 · 계약상 권리</div>
+        <div class="criteria-text">CSP 계약서에 <b>감사권·데이터 반환권·하도급 현황 통지 의무</b>를 명시적으로 포함시킵니다.</div>
+      </div>
+      <div class="criteria-card">
+        <div class="criteria-title">사후관리 3 · 로그 보존</div>
+        <div class="criteria-text">접속기록 등 로그는 전자금융감독규정 기준(<b>통상 2년 이상</b>)에 맞춰 불변 스토리지에 보존합니다.</div>
+      </div>
+      <div class="criteria-card">
+        <div class="criteria-title">사후관리 4 · 모의훈련</div>
+        <div class="criteria-text">공통망 SOC 주관으로 <b>연 1회 이상 침해사고 대응 모의훈련</b>을 계열사 합동으로 실시합니다.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    본 구성도는 AWS·Azure를 함께 사용하는 금융 그룹의 참고용 아키텍처 예시입니다. 실제 구축 시에는 금융보안원 「금융분야 클라우드컴퓨팅서비스 이용 가이드」, 전자금융감독규정, 「신용정보의 이용 및 보호에 관한 법률」 등 관련 규정과 09장의 자체 위험평가(CSA) 절차를 실제로 수행한 결과를 반영해 조정해야 하며, 특정 3rd-party 보안 제품명은 예시이므로 실제 도입 시 자체 평가를 거쳐 선정하시기 바랍니다. 계열사가 3개사 이상인 경우 계열사 B와 동일한 「전용회선 + 전용 VPC/VNet + Prod·Stage·Test 계정 + 4-Zone」 패턴을 반복 적용합니다.
+  </footer>
+
+</div>

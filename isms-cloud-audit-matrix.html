@@ -1547,152 +1547,261 @@ $ az backup vault list --query "[].properties.storageType"
   var exportStatus = document.getElementById('exportStatus');
   var downloadsNS = null;
 
-  function csvEscape(value) {
+  // 단일 값(도메인명, 명령어 한 줄, 판단기준 등)은 공백을 한 칸으로 정리해 한 셀에 담는다.
+  function csvEscapeFlat(value) {
     var v = (value || '').replace(/\s+/g, ' ').trim();
     return '"' + v.replace(/"/g, '""') + '"';
   }
 
+  // 실행 예시·결과처럼 여러 줄(명령어+출력+코멘트)로 구성된 값은 줄바꿈을 살려 한 셀 안에 유지한다.
+  function csvEscapeMultiline(value) {
+    var v = (value || '').replace(/\r\n/g, '\n').split('\n').map(function (l) { return l.trim(); }).join('\n').trim();
+    return '"' + v.replace(/"/g, '""') + '"';
+  }
+
   function buildCSV() {
-    var header = ['영역ID','영역명','통제항목ID','통제항목명','설명',
-      'AWS_점검명령어','AWS_실행예시및결과','AWS_문제판단기준','AWS_개선방안',
-      'Azure_점검명령어','Azure_실행예시및결과','Azure_문제판단기준','Azure_개선방안'];
-    var rows = [header];
+    var header = ['영역ID', '영역명', '통제항목ID', '통제항목명', '설명', '제공자', '명령어순번', '점검명령어', '실행예시및결과', '문제판단기준', '개선방안'];
+    var rows = [header.map(csvEscapeFlat).join(',')];
 
     document.querySelectorAll('.domain').forEach(function (domainEl) {
       var domainId = domainEl.dataset.domainId;
       var domainName = domainEl.dataset.domainName;
       domainEl.querySelectorAll('.card').forEach(function (card) {
-        var get = function (sel) {
-          var el = card.querySelector(sel);
-          return el ? el.textContent : '';
-        };
-        rows.push([
-          domainId,
-          domainName,
-          card.dataset.id,
-          get('.card-head h3'),
-          get('.card-desc'),
-          get('.provider.aws .field-cmd .code'),
-          get('.provider.aws .field-example .code'),
-          get('.provider.aws .field-crit .field-text'),
-          get('.provider.aws .field-fix .field-text'),
-          get('.provider.azure .field-cmd .code'),
-          get('.provider.azure .field-example .code'),
-          get('.provider.azure .field-crit .field-text'),
-          get('.provider.azure .field-fix .field-text')
-        ]);
+        var controlId = card.dataset.id;
+        var controlName = card.querySelector('.card-head h3').textContent;
+        var desc = card.querySelector('.card-desc').textContent;
+
+        ['aws', 'azure'].forEach(function (provider) {
+          var section = card.querySelector('.provider.' + provider);
+          if (!section) return;
+          var providerLabel = provider === 'aws' ? 'AWS' : 'Azure';
+          var cmdText = section.querySelector('.field-cmd .code').textContent;
+          var exampleText = section.querySelector('.field-example .code').textContent;
+          var crit = section.querySelector('.field-crit .field-text').textContent;
+          var fix = section.querySelector('.field-fix .field-text').textContent;
+
+          // 명령어는 줄 단위로, 실행 예시·결과는 빈 줄(명령어 사이 여백) 단위로 나눠 같은 순번끼리 짝지어 레코드를 만든다.
+          var cmdLines = cmdText.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+          var exampleBlocks = exampleText.split(/\n\s*\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+          var count = Math.max(cmdLines.length, exampleBlocks.length, 1);
+
+          for (var i = 0; i < count; i++) {
+            rows.push([
+              csvEscapeFlat(domainId),
+              csvEscapeFlat(domainName),
+              csvEscapeFlat(controlId),
+              csvEscapeFlat(controlName),
+              csvEscapeFlat(desc),
+              csvEscapeFlat(providerLabel),
+              csvEscapeFlat(String(i + 1)),
+              csvEscapeFlat(cmdLines[i] || ''),
+              csvEscapeMultiline(exampleBlocks[i] || ''),
+              csvEscapeFlat(crit),
+              csvEscapeFlat(fix)
+            ].join(','));
+          }
+        });
       });
     });
 
-    return rows.map(function (r) { return r.map(csvEscape).join(','); }).join('\r\n');
+    return rows.join('\r\n');
   }
 
-  // ---- Word (.doc) export ----
-  function escapeHtml(value) {
-    return (value || '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
+  // ---- Word (.docx) export: a genuine Open XML file built in-browser, no external libraries ----
+
+  // minimal ZIP (store-only) writer — enough to package the .docx container
+  var CRC32_TABLE = (function () {
+    var table = [];
+    for (var n = 0; n < 256; n++) {
+      var c = n;
+      for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      table[n] = c >>> 0;
+    }
+    return table;
+  })();
+
+  function crc32(bytes) {
+    var crc = 0xFFFFFFFF;
+    for (var i = 0; i < bytes.length; i++) crc = (crc >>> 8) ^ CRC32_TABLE[(crc ^ bytes[i]) & 0xFF];
+    return (crc ^ 0xFFFFFFFF) >>> 0;
   }
 
-  function codeBlockHtml(text) {
-    return '<div class="w-code">' + escapeHtml(text).replace(/\r?\n/g, '<br>') + '</div>';
+  function le16(n) { return [n & 0xff, (n >> 8) & 0xff]; }
+  function le32(n) { return [n & 0xff, (n >> 8) & 0xff, (n >> 16) & 0xff, (n >>> 24) & 0xff]; }
+
+  function createZip(files) {
+    var encoder = new TextEncoder();
+    var localChunks = [];
+    var centralChunks = [];
+    var offset = 0;
+
+    files.forEach(function (file) {
+      var nameBytes = encoder.encode(file.name);
+      var data = file.data;
+      var crc = crc32(data);
+      var localHeaderBytes = new Uint8Array(
+        [0x50, 0x4b, 0x03, 0x04].concat(le16(20), le16(0), le16(0), le16(0), le16(0),
+          le32(crc), le32(data.length), le32(data.length), le16(nameBytes.length), le16(0))
+      );
+      localChunks.push(localHeaderBytes, nameBytes, data);
+
+      centralChunks.push(new Uint8Array(
+        [0x50, 0x4b, 0x01, 0x02].concat(le16(20), le16(20), le16(0), le16(0), le16(0), le16(0),
+          le32(crc), le32(data.length), le32(data.length), le16(nameBytes.length), le16(0), le16(0),
+          le16(0), le16(0), le32(0), le32(offset))
+      ), nameBytes);
+
+      offset += localHeaderBytes.length + nameBytes.length + data.length;
+    });
+
+    var centralStart = offset;
+    var centralSize = centralChunks.reduce(function (sum, c) { return sum + c.length; }, 0);
+    var eocd = new Uint8Array(
+      [0x50, 0x4b, 0x05, 0x06].concat(le16(0), le16(0), le16(files.length), le16(files.length),
+        le32(centralSize), le32(centralStart), le16(0))
+    );
+
+    var allChunks = localChunks.concat(centralChunks, [eocd]);
+    var out = new Uint8Array(allChunks.reduce(function (sum, c) { return sum + c.length; }, 0));
+    var pos = 0;
+    allChunks.forEach(function (chunk) { out.set(chunk, pos); pos += chunk.length; });
+    return out;
   }
 
-  function providerCellHtml(card, providerSel) {
-    var get = function (sel) {
-      var el = card.querySelector(providerSel + ' ' + sel);
-      return el ? el.textContent : '';
-    };
+  function xmlEscape(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+  }
+
+  // one WordprocessingML paragraph; opts.shd shades the whole block (code/crit/fix boxes),
+  // opts.border draws the left accent bar used on the crit/fix boxes
+  function docxParagraph(text, opts) {
+    opts = opts || {};
+    var rPr = '';
+    // CT_RPr is also a strict sequence: rFonts, b, ..., color, ..., sz, szCs, ...
+    if (opts.mono) rPr += '<w:rFonts w:ascii="Consolas" w:hAnsi="Consolas" w:cs="Consolas"/>';
+    if (opts.bold) rPr += '<w:b/>';
+    if (opts.color) rPr += '<w:color w:val="' + opts.color + '"/>';
+    if (opts.size) { var hp = Math.round(opts.size * 2); rPr += '<w:sz w:val="' + hp + '"/><w:szCs w:val="' + hp + '"/>'; }
+    var rPrXml = rPr ? '<w:rPr>' + rPr + '</w:rPr>' : '';
+    // CT_PPrBase is a strict sequence: pBdr, then shd, then spacing (Word/LibreOffice
+    // reject out-of-order children even though lenient readers like python-docx don't care).
+    var pPrInner = '';
+    if (opts.border) pPrInner += '<w:pBdr><w:left w:val="single" w:sz="24" w:space="4" w:color="' + opts.border + '"/></w:pBdr>';
+    if (opts.shd) pPrInner += '<w:shd w:val="clear" w:color="auto" w:fill="' + opts.shd + '"/>';
+    pPrInner += '<w:spacing w:before="' + (opts.before != null ? opts.before : 60) + '" w:after="' + (opts.after != null ? opts.after : 60) + '"/>';
+    var lines = String(text || '').split('\n');
+    var runs = lines.map(function (line, i) {
+      var br = i < lines.length - 1 ? '<w:br/>' : '';
+      return '<w:r>' + rPrXml + '<w:t xml:space="preserve">' + xmlEscape(line) + '</w:t></w:r>' + br;
+    }).join('');
+    return '<w:p><w:pPr>' + pPrInner + '</w:pPr>' + (runs || '<w:r>' + rPrXml + '<w:t/></w:r>') + '</w:p>';
+  }
+
+  function docxCell(widthTwips, innerXml, shdFill) {
+    var tcPr = '<w:tcPr><w:tcW w:w="' + widthTwips + '" w:type="dxa"/>' +
+      (shdFill ? '<w:shd w:val="clear" w:color="auto" w:fill="' + shdFill + '"/>' : '') +
+      '<w:tcMar><w:top w:w="120" w:type="dxa"/><w:left w:w="160" w:type="dxa"/><w:bottom w:w="120" w:type="dxa"/><w:right w:w="160" w:type="dxa"/></w:tcMar>' +
+      '<w:vAlign w:val="top"/></w:tcPr>';
+    return '<w:tc>' + tcPr + (innerXml || '<w:p/>') + '</w:tc>';
+  }
+
+  function docxTable(colWidthTwips, rowsXml) {
+    var borderEdge = function (edge) { return '<w:' + edge + ' w:val="single" w:sz="4" w:space="0" w:color="DBE1E9"/>'; };
+    var tblPr = '<w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblBorders>' +
+      ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(borderEdge).join('') +
+      '</w:tblBorders><w:tblLayout w:type="fixed"/></w:tblPr>';
+    var tblGrid = '<w:tblGrid><w:gridCol w:w="' + colWidthTwips + '"/><w:gridCol w:w="' + colWidthTwips + '"/></w:tblGrid>';
+    return '<w:tbl>' + tblPr + tblGrid + rowsXml + '</w:tbl>';
+  }
+
+  function providerFieldParagraphs(section) {
+    var cmd = section.querySelector('.field-cmd .code').textContent.trim();
+    var example = section.querySelector('.field-example .code').textContent.trim();
+    var crit = section.querySelector('.field-crit .field-text').textContent.trim();
+    var fix = section.querySelector('.field-fix .field-text').textContent.trim();
     return (
-      '<span class="w-label">점검 명령어</span>' + codeBlockHtml(get('.field-cmd .code')) +
-      '<span class="w-label">실행 예시 및 결과</span>' + codeBlockHtml(get('.field-example .code')) +
-      '<span class="w-label">문제 판단 기준</span><div class="w-crit">' + escapeHtml(get('.field-crit .field-text')) + '</div>' +
-      '<span class="w-label">개선 방안</span><div class="w-fix">' + escapeHtml(get('.field-fix .field-text')) + '</div>'
+      docxParagraph('점검 명령어', { bold: true, size: 7.5, color: '8B95A3', before: 0, after: 20 }) +
+      docxParagraph(cmd, { mono: true, size: 8.5, color: 'D9E2F1', shd: '0E1420', before: 0, after: 100 }) +
+      docxParagraph('실행 예시 및 결과', { bold: true, size: 7.5, color: '8B95A3', before: 60, after: 20 }) +
+      docxParagraph(example, { mono: true, size: 8.5, color: 'D9E2F1', shd: '0E1420', before: 0, after: 100 }) +
+      docxParagraph('문제 판단 기준', { bold: true, size: 7.5, color: '8B95A3', before: 60, after: 20 }) +
+      docxParagraph(crit, { size: 9, shd: 'F7E5E3', border: 'A63A30', before: 0, after: 100 }) +
+      docxParagraph('개선 방안', { bold: true, size: 7.5, color: '8B95A3', before: 60, after: 20 }) +
+      docxParagraph(fix, { size: 9, shd: 'E3F0E6', border: '326A41', before: 0, after: 0 })
     );
   }
 
-  function buildWordDocument() {
+  function buildDocxBody() {
+    var TABLE_COL_TWIPS = 7512; // landscape A4 usable width (15024) split into two equal columns
+    var parts = [];
     var title = '클라우드 ISMS 점검 매트릭스';
-    var lede = document.querySelector('.lede') ? document.querySelector('.lede').textContent : '';
-    var body = '';
+    var lede = document.querySelector('.lede') ? document.querySelector('.lede').textContent.trim() : '';
 
-    // Word's HTML/DOC filter autofits table columns to content and largely
-    // ignores percentage widths on <col>/<td>. It only reliably honors
-    // absolute point (style) + pixel (legacy width attribute) values, which
-    // is what Word itself emits when it saves HTML — so we hardcode both
-    // here instead of using %.
-    var TABLE_WIDTH_PT = 720, COL_WIDTH_PT = 360;
-    var TABLE_WIDTH_PX = 960, COL_WIDTH_PX = 480;
-    var colStyle = 'width:' + COL_WIDTH_PT + '.0pt';
+    parts.push(docxParagraph(title, { bold: true, size: 22, color: '0D4F4E', before: 0, after: 120 }));
+    parts.push(docxParagraph(lede, { size: 9, color: '5B6572', before: 0, after: 240 }));
 
     document.querySelectorAll('.domain').forEach(function (domainEl) {
       var domainId = domainEl.dataset.domainId;
       var domainName = domainEl.dataset.domainName;
-      body += '<h2>' + escapeHtml(domainId) + ' ' + escapeHtml(domainName) + '</h2>';
+      parts.push(docxParagraph(domainId + ' ' + domainName, { bold: true, size: 14, color: '0D4F4E', before: 280, after: 100 }));
 
       domainEl.querySelectorAll('.card').forEach(function (card) {
         var controlId = card.dataset.id;
-        var controlName = card.querySelector('.card-head h3') ? card.querySelector('.card-head h3').textContent : '';
-        var desc = card.querySelector('.card-desc') ? card.querySelector('.card-desc').textContent : '';
-        body +=
-          '<h3><span class="w-badge">' + escapeHtml(controlId) + '</span> ' + escapeHtml(controlName) + '</h3>' +
-          '<p class="w-desc">' + escapeHtml(desc) + '</p>' +
-          '<table class="w-matrix" width="' + TABLE_WIDTH_PX + '" cellpadding="0" cellspacing="0" style="table-layout:fixed;mso-table-layout-alt:fixed;width:' + TABLE_WIDTH_PT + '.0pt;">' +
-          '<colgroup><col width="' + COL_WIDTH_PX + '" style="' + colStyle + '"><col width="' + COL_WIDTH_PX + '" style="' + colStyle + '"></colgroup>' +
-          '<tr>' +
-          '<th class="w-th-aws" width="' + COL_WIDTH_PX + '" style="' + colStyle + '">AWS</th>' +
-          '<th class="w-th-azure" width="' + COL_WIDTH_PX + '" style="' + colStyle + '">Azure</th>' +
-          '</tr><tr>' +
-          '<td width="' + COL_WIDTH_PX + '" style="' + colStyle + '">' + providerCellHtml(card, '.provider.aws') + '</td>' +
-          '<td width="' + COL_WIDTH_PX + '" style="' + colStyle + '">' + providerCellHtml(card, '.provider.azure') + '</td>' +
-          '</tr></table>';
+        var controlName = card.querySelector('.card-head h3').textContent;
+        var desc = card.querySelector('.card-desc').textContent;
+        var awsSection = card.querySelector('.provider.aws');
+        var azureSection = card.querySelector('.provider.azure');
+
+        parts.push(docxParagraph(controlId + '  ' + controlName, { bold: true, size: 12, before: 200, after: 40 }));
+        parts.push(docxParagraph(desc, { size: 9, color: '5B6572', before: 0, after: 80 }));
+
+        var headerRow = '<w:tr>' +
+          docxCell(TABLE_COL_TWIPS, docxParagraph('AWS', { bold: true, mono: true, size: 9, color: 'A15A20', before: 0, after: 0 }), 'F6EAD9') +
+          docxCell(TABLE_COL_TWIPS, docxParagraph('Azure', { bold: true, mono: true, size: 9, color: '2B5F96', before: 0, after: 0 }), 'DFEAF7') +
+          '</w:tr>';
+        var bodyRow = '<w:tr>' +
+          docxCell(TABLE_COL_TWIPS, providerFieldParagraphs(awsSection)) +
+          docxCell(TABLE_COL_TWIPS, providerFieldParagraphs(azureSection)) +
+          '</w:tr>';
+
+        parts.push(docxTable(TABLE_COL_TWIPS, headerRow + bodyRow));
+        parts.push(docxParagraph('', { before: 0, after: 120 }));
       });
     });
 
-    return (
-      '<!DOCTYPE html>' +
-      '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
-      '<head><meta charset="utf-8"><title>' + escapeHtml(title) + '</title>' +
-      '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>90</w:Zoom>' +
-      '<w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->' +
-      '<style>' +
-      // A bare "@page { ... }" rule is silently ignored by Word's HTML/DOC
-      // filter (it keeps its own default portrait page) — Word only honors
-      // page setup when the @page rule is named and paired with a matching
-      // "div.NAME { page: NAME; }" rule wrapping the body content.
-      '@page Section1 { size: 29.7cm 21cm; mso-page-orientation: landscape; margin: 1.6cm; }' +
-      'div.Section1 { page: Section1; }' +
-      'body { font-family: "맑은 고딕", "Malgun Gothic", sans-serif; font-size: 10pt; color: #1a2230; }' +
-      'h1 { font-size: 20pt; color: #0d4f4e; margin-bottom: 4pt; }' +
-      '.w-lede { font-size: 10pt; color: #5b6572; margin-bottom: 16pt; }' +
-      'h2 { font-size: 14pt; color: #0d4f4e; border-bottom: 1.5pt solid #dbe1e9; padding-bottom: 4pt; margin-top: 22pt; }' +
-      'h3 { font-size: 12pt; margin: 14pt 0 3pt; }' +
-      '.w-badge { font-family: Consolas, monospace; font-size: 9pt; background: #eef1f5; border: 1pt solid #dbe1e9; padding: 1pt 5pt; }' +
-      '.w-desc { font-size: 9.5pt; color: #5b6572; margin: 0 0 6pt; }' +
-      // mso-table-layout-alt MUST stay out of this class rule: declaring it
-      // on a class selector (as opposed to the table's own inline style,
-      // where it's also set below) makes Word re-enable AutoFit-to-Contents
-      // instead of honoring it — verified empirically against Word 16.0.
-      'table.w-matrix { border-collapse: collapse; margin-bottom: 12pt; table-layout: fixed; }' +
-      'table.w-matrix th, table.w-matrix td { border: 1pt solid #dbe1e9; padding: 6pt 8pt; vertical-align: top; overflow: hidden; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; }' +
-      'table.w-matrix th { font-family: Consolas, monospace; font-size: 9pt; text-align: left; }' +
-      '.w-th-aws { background: #f6ead9; color: #a15a20; }' +
-      '.w-th-azure { background: #dfeaf7; color: #2b5f96; }' +
-      '.w-label { display: block; font-family: Consolas, monospace; font-size: 7.5pt; text-transform: uppercase; color: #8b95a3; margin: 6pt 0 2pt; }' +
-      '.w-label:first-child { margin-top: 0; }' +
-      '.w-code { font-family: Consolas, monospace; font-size: 8.5pt; line-height: 1.5; background: #0e1420; color: #d9e2f1; padding: 6pt 8pt; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; }' +
-      '.w-crit { border-left: 3pt solid #a63a30; background: #f7e5e3; padding: 5pt 7pt; font-size: 9pt; word-wrap: break-word; }' +
-      '.w-fix { border-left: 3pt solid #326a41; background: #e3f0e6; padding: 5pt 7pt; font-size: 9pt; word-wrap: break-word; }' +
-      '</style></head>' +
-      '<body>' +
-      '<div class="Section1">' +
-      '<h1>' + escapeHtml(title) + '</h1>' +
-      '<p class="w-lede">' + escapeHtml(lede) + '</p>' +
-      body +
-      '</div>' +
-      '</body></html>'
-    );
+    return parts.join('');
+  }
+
+  function buildDocxBytes() {
+    var encoder = new TextEncoder();
+    var body = buildDocxBody();
+
+    var documentXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:body>' + body +
+      '<w:sectPr><w:pgSz w:w="16838" w:h="11906" w:orient="landscape"/>' +
+      '<w:pgMar w:top="907" w:right="907" w:bottom="907" w:left="907" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr>' +
+      '</w:body></w:document>';
+
+    var contentTypesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+      '<Default Extension="xml" ContentType="application/xml"/>' +
+      '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+      '</Types>';
+
+    var rootRelsXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+      '</Relationships>';
+
+    return createZip([
+      { name: '[Content_Types].xml', data: encoder.encode(contentTypesXml) },
+      { name: '_rels/.rels', data: encoder.encode(rootRelsXml) },
+      { name: 'word/document.xml', data: encoder.encode(documentXml) }
+    ]);
   }
 
   var ERROR_MESSAGES = {
@@ -1731,7 +1840,7 @@ $ az backup vault list --query "[].properties.storageType"
     exportBtn.disabled = false;
     exportBtn.textContent = 'CSV로 내보내기 (Excel용)';
     exportWordBtn.disabled = false;
-    exportWordBtn.textContent = 'Word로 내보내기 (.doc)';
+    exportWordBtn.textContent = 'Word로 내보내기 (.docx)';
   })();
 
   exportBtn.addEventListener('click', async function () {
@@ -1769,15 +1878,18 @@ $ az backup vault list --query "[].properties.storageType"
   exportWordBtn.addEventListener('click', async function () {
     var prevLabel = exportWordBtn.textContent;
     exportStatus.textContent = '';
-    var doc = buildWordDocument();
-    var filename = 'ISMS_AWS_Azure_Cloud_Audit_Matrix.doc';
-    var mimeType = 'application/msword;charset=utf-8;';
+    var bytes = buildDocxBytes();
+    var filename = 'ISMS_AWS_Azure_Cloud_Audit_Matrix.docx';
+    var mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
     if (downloadsNS) {
       exportWordBtn.disabled = true;
       exportWordBtn.textContent = '내보내는 중…';
       try {
-        await downloadsNS.save({ filename: filename, data: doc, mimeType: mimeType });
+        var binary = '';
+        for (var i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+        var base64 = btoa(binary);
+        await downloadsNS.save({ filename: filename, data: base64, encoding: 'base64', mimeType: mimeType });
         exportStatus.textContent = '다운로드 완료 · Word에서 열어 확인하세요.';
       } catch (err) {
         var code = err && err.code;
@@ -1791,7 +1903,7 @@ $ az backup vault list --query "[].properties.storageType"
 
     if (standaloneMode) {
       try {
-        triggerBlobDownload(filename, doc, mimeType);
+        triggerBlobDownload(filename, bytes, mimeType);
         exportStatus.textContent = '다운로드 완료 · Word에서 열어 확인하세요.';
       } catch (e) {
         exportStatus.textContent = '다운로드에 실패했습니다. 브라우저의 다운로드 차단 설정을 확인해 주세요.';

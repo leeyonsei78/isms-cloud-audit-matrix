@@ -28,13 +28,13 @@ ISMS-P 2022 개정 인증기준 영역 2 중 7개 영역(2.5, 2.6, 2.7, 2.9, 2.1
 - 검색창 + 영역 필터 칩으로 카드 표시/숨김
 - 코드 블록 복사 버튼
 - 편집 초기화 버튼(2단계 확인 후 localStorage 편집분 삭제)
-- **CSV 내보내기** (`exportBtn` / `buildCSV()`) — 전체 17개 항목을 Excel용 CSV로 다운로드
-- **Word 내보내기** (`exportWordBtn` / `buildWordDocument()`) — 전체 17개 항목을 Microsoft Word 호환 `.doc` 파일로 다운로드. Word가 열 수 있는 MHTML 스타일 HTML(`xmlns:w="urn:schemas-microsoft-com:office:word"`)을 생성해 `application/msword` MIME으로 Blob 다운로드한다. CSS 변수·flex/grid는 Word 렌더러가 지원하지 않으므로, 표(`<table>`)와 고정 hex 색상만 사용한 별도 스타일(`w-*` 클래스)로 새로 구성했다 — 화면 표시용 CSS를 그대로 재사용하지 않음.
-- 두 내보내기 모두 검색/필터 상태와 무관하게 항상 전체 17개 항목을 포함하며, `window.claude.use('downloads')` 캡셔빌리티가 있으면 그것을 우선 사용하고, 없으면(일반 브라우저) `Blob` + `<a download>`로 폴백한다.
+- **CSV 내보내기** (`exportBtn` / `buildCSV()`) — long-format(레코드 분리형)으로 다운로드. 한 행 = (통제항목 × 제공자(AWS/Azure) × 명령어 한 줄). `점검 명령어`는 줄 단위로, `실행 예시 및 결과`는 빈 줄로 구분된 블록 단위로 나눠 같은 순번끼리 짝지어 `명령어순번` 컬럼과 함께 별도 레코드로 만든다(둘 다 34개 AWS/Azure 블록에서 명령어 줄 수와 예시 블록 수가 1:1로 맞아야 함 — 새 명령어를 추가할 때 예시도 같은 개수로 유지할 것).
+- **Word 내보내기** (`exportWordBtn` / `buildDocxBytes()`) — 전체 17개 항목을 실제 Open XML `.docx` 파일로 다운로드. 외부 라이브러리 없이 브라우저에서 직접 ZIP(store 방식, `createZip()`/`crc32()`)과 WordprocessingML(`word/document.xml`)을 조립한다. 통제항목마다 AWS|Azure 2열 표(`docxTable()`/`docxCell()`)를 만들고, 명령어·실행예시는 어두운 배경의 모노스페이스 블록으로, 문제 판단 기준/개선 방안은 좌측 색상 바 + 옅은 배경 박스로 표현해 화면 카드 디자인을 재현한다. **`docxParagraph()`의 `<w:pPr>`(pBdr→shd→spacing)·`<w:rPr>`(rFonts→b→color→sz/szCs) 자식 요소 순서는 OOXML 스키마가 강제하는 고정 순서이므로 절대 바꾸지 말 것** — 순서가 틀리면 python-docx 같은 관대한 파서는 읽히지만 실제 Word/LibreOffice는 파일이 손상된 것으로 보고 열지 못한다.
+- 두 내보내기 모두 검색/필터 상태와 무관하게 항상 전체 17개 항목을 포함하며, `window.claude.use('downloads')` 캡셔빌리티가 있으면 그것을 우선 사용하고(Word는 바이트를 base64로 인코딩해 전달), 없으면(일반 브라우저) `Blob` + `<a download>`로 폴백한다.
 
 ## 새 통제항목/필드 추가 시
 
-카드 마크업을 복사해 새 `<article class="card" data-id="...">`를 추가하고 각 필드에 고유 `data-key`를 부여하면, `buildCSV()`와 `buildWordDocument()`는 DOM을 클래스 셀렉터로 순회하므로 **수정 없이 자동으로 새 항목을 포함**한다.
+카드 마크업을 복사해 새 `<article class="card" data-id="...">`를 추가하고 각 필드에 고유 `data-key`를 부여하면, `buildCSV()`와 `buildDocxBytes()`는 DOM을 클래스 셀렉터로 순회하므로 **수정 없이 자동으로 새 항목을 포함**한다. 단, `실행 예시 및 결과`에 적어 넣는 명령어별 예시 블록 개수는 `점검 명령어`의 줄 수와 반드시 1:1로 맞춰야 CSV의 레코드 분리가 올바르게 짝지어진다.
 
 ## 로컬 작업 ↔ GitHub 동기화
 

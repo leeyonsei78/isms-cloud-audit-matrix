@@ -237,6 +237,44 @@
 
   .more-note { text-align: center; font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-faint); padding: 8px 0 2px; letter-spacing: .02em; }
 
+  /* ---------- detailed network topology (Region > VPC > AZ > Subnet) ---------- */
+  .net-shell { min-width: 1160px; padding: 26px; }
+  .net-region { border: 2px dashed var(--border-strong); border-radius: var(--radius); padding: 18px; background: var(--surface); }
+  .net-region-label { font-family: var(--font-mono); font-weight: 700; font-size: 13px; color: var(--ink-muted); margin-bottom: 14px; }
+  .net-vpc { border-radius: var(--radius-sm); padding: 16px; }
+  .net-vpc.aws { background: var(--aws-soft); border: 1.5px solid var(--aws-line); }
+  .net-vpc.azure { background: var(--azure-soft); border: 1.5px solid var(--azure-line); }
+  .net-vpc-head { font-weight: 800; font-size: 14px; margin-bottom: 12px; }
+  .net-vpc-head.aws { color: var(--aws); }
+  .net-vpc-head.azure { color: var(--azure); }
+  .net-az-row { display: flex; gap: 16px; }
+  .net-az { flex: 1; border: 1.5px dashed var(--border-strong); border-radius: 8px; padding: 12px; background: var(--surface); }
+  .net-az-label { font-family: var(--font-mono); font-size: 10.5px; font-weight: 700; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 10px; }
+  .net-subnet { border-radius: 6px; padding: 9px 11px; margin-bottom: 8px; font-size: 11.8px; border-left: 3px solid var(--border-strong); background: var(--surface-2); }
+  .net-subnet:last-child { margin-bottom: 0; }
+  .net-subnet .cidr { display: block; font-family: var(--font-mono); font-size: 10px; color: var(--ink-faint); margin-bottom: 3px; }
+  .net-subnet .svc { color: var(--ink); }
+  .net-subnet.web { border-left-color: var(--ink-faint); }
+  .net-subnet.was { border-left-color: var(--shared-line); }
+  .net-subnet.db { border-left-color: var(--sec); background: var(--sec-soft); }
+  .net-mgmt { margin-top: 12px; background: var(--surface-2); border-radius: 6px; padding: 10px 12px; font-size: 11.8px; border-left: 3px solid var(--enc); }
+  .net-boundary-row { display: flex; justify-content: center; margin-top: 14px; }
+  .net-boundary { font-family: var(--font-mono); font-size: 11px; color: var(--sec); border: 1.5px dashed var(--sec); border-radius: 999px; padding: 6px 16px; background: var(--sec-soft); }
+  .net-ingress { text-align: center; font-family: var(--font-mono); font-size: 11px; color: var(--ink-muted); margin-bottom: 10px; }
+
+  /* ---------- JIT access flow ---------- */
+  .jit-banner { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 18px; font-family: var(--font-mono); font-size: 12px; flex-wrap: wrap; }
+  .jit-banner .deny { color: var(--block); border: 1.5px solid var(--block); border-radius: 999px; padding: 5px 14px; background: var(--sec-soft); }
+  .jit-banner .allow { color: var(--ca); border: 1.5px solid var(--ca-line); border-radius: 999px; padding: 5px 14px; background: var(--ca-soft); }
+  .jit-row { display: flex; align-items: stretch; gap: 0; }
+  .jit-step { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 15px; box-shadow: var(--shadow); min-width: 0; }
+  .jit-step.approve { border-color: var(--enc); background: var(--enc-soft); }
+  .jit-arrow-col { display: flex; align-items: center; justify-content: center; width: 30px; color: var(--ink-faint); font-size: 18px; flex: none; }
+  .jit-step-num { font-family: var(--font-mono); font-size: 10px; font-weight: 700; margin-bottom: 5px; }
+  .jit-step-title { font-weight: 700; font-size: 13px; margin-bottom: 7px; }
+  .jit-step-body { font-size: 11.3px; color: var(--ink-muted); line-height: 1.55; }
+  .jit-step-body b { color: var(--ink); font-weight: 600; }
+
   /* ---------- comparison table ---------- */
   .table-scroll { overflow-x: auto; margin-top: 20px; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
   table.cmp { border-collapse: collapse; width: 100%; min-width: 880px; background: var(--surface); font-size: 13px; }
@@ -543,10 +581,75 @@
     </div>
   </section>
 
+  <!-- ================= DETAILED NETWORK TOPOLOGY ================= -->
+  <section>
+    <div class="section-head">
+      <div class="section-kicker">04 · Network Detail</div>
+      <h2>상세 네트워크 구성도 — Region · VPC · 가용영역 · Subnet</h2>
+      <p class="section-desc">계열사 A Production을 기준으로, 실제 구축 시 필요한 리전·VPC·가용영역(AZ)·서브넷 CIDR 단위까지 내려간 구성입니다. 인터넷 게이트웨이는 두지 않고, 그룹 데이터센터로부터의 전용회선만 VPC/VNet에 연결됩니다.</p>
+    </div>
+
+    <div class="diagram-shell">
+      <div class="net-shell">
+        <div class="net-region">
+          <div class="net-region-label">AWS Region — ap-northeast-2 (서울)</div>
+          <div class="net-ingress">↑ 전용회선(Direct Connect, 이중화) — 그룹 데이터센터 · 인터넷 게이트웨이 없음</div>
+          <div class="net-vpc aws">
+            <div class="net-vpc-head aws">VPC — 계열사 A 전용 · 10.10.0.0/16</div>
+            <div class="net-az-row">
+              <div class="net-az">
+                <div class="net-az-label">Availability Zone A</div>
+                <div class="net-subnet web"><span class="cidr">Web Subnet · 10.10.1.0/24</span><span class="svc">EC2(웹서버) + ALB</span></div>
+                <div class="net-subnet was"><span class="cidr">WAS Subnet · 10.10.2.0/24</span><span class="svc">EC2(WAS) · ETL/배치 서버 · 모니터링 EC2</span></div>
+                <div class="net-subnet db"><span class="cidr">DB Subnet · 10.10.3.0/24</span><span class="svc">Amazon Aurora/RDS(Primary) · 개인신용정보</span></div>
+              </div>
+              <div class="net-az">
+                <div class="net-az-label">Availability Zone B</div>
+                <div class="net-subnet web"><span class="cidr">Web Subnet · 10.10.11.0/24</span><span class="svc">EC2(웹서버) + ALB</span></div>
+                <div class="net-subnet was"><span class="cidr">WAS Subnet · 10.10.12.0/24</span><span class="svc">EC2(WAS) · ETL/배치 서버 · 모니터링 EC2</span></div>
+                <div class="net-subnet db"><span class="cidr">DB Subnet · 10.10.13.0/24</span><span class="svc">Amazon Aurora/RDS(Standby) · 개인신용정보</span></div>
+              </div>
+            </div>
+            <div class="net-mgmt">관리 Subnet · 10.10.4.0/24 — <b>NAT Gateway</b>(패치·업데이트용 아웃바운드, 전용회선 내부 리포지토리 경유·인터넷 미경유) · Bastion 연동 · 패치서버 · S3(로그·백업)</div>
+          </div>
+          <div class="net-boundary-row"><span class="net-boundary">경계: Network Firewall(IPS/IDS) — 전용회선 진입점에 인라인 배치, 전 트래픽 검사</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="diagram-shell" style="margin-top:18px;">
+      <div class="net-shell">
+        <div class="net-region">
+          <div class="net-region-label">Microsoft Azure Region — Korea Central</div>
+          <div class="net-ingress">↑ 전용회선(ExpressRoute, 이중화) — 그룹 데이터센터 · 인터넷 게이트웨이 없음</div>
+          <div class="net-vpc azure">
+            <div class="net-vpc-head azure">VNet — 계열사 A 전용 · 10.20.0.0/16</div>
+            <div class="net-az-row">
+              <div class="net-az">
+                <div class="net-az-label">가용성 영역(Zone) 1</div>
+                <div class="net-subnet web"><span class="cidr">Web Subnet · 10.20.1.0/24</span><span class="svc">VM(웹서버) + Application Gateway</span></div>
+                <div class="net-subnet was"><span class="cidr">WAS Subnet · 10.20.2.0/24</span><span class="svc">VM(WAS) · ETL/배치 서버 · 모니터링 VM</span></div>
+                <div class="net-subnet db"><span class="cidr">DB Subnet · 10.20.3.0/24</span><span class="svc">Azure SQL Managed Instance(Primary) · 개인신용정보</span></div>
+              </div>
+              <div class="net-az">
+                <div class="net-az-label">가용성 영역(Zone) 2</div>
+                <div class="net-subnet web"><span class="cidr">Web Subnet · 10.20.11.0/24</span><span class="svc">VM(웹서버) + Application Gateway</span></div>
+                <div class="net-subnet was"><span class="cidr">WAS Subnet · 10.20.12.0/24</span><span class="svc">VM(WAS) · ETL/배치 서버 · 모니터링 VM</span></div>
+                <div class="net-subnet db"><span class="cidr">DB Subnet · 10.20.13.0/24</span><span class="svc">Azure SQL Managed Instance(Secondary) · 개인신용정보</span></div>
+              </div>
+            </div>
+            <div class="net-mgmt">관리 Subnet · 10.20.4.0/24 — <b>NAT Gateway</b>(패치·업데이트용 아웃바운드, 전용회선 내부 리포지토리 경유·인터넷 미경유) · Bastion 연동 · 패치서버(Update Manager) · Blob Storage(로그·백업)</div>
+          </div>
+          <div class="net-boundary-row"><span class="net-boundary">경계: Azure Firewall(IPS/IDS) — 전용회선 진입점에 인라인 배치, 전 트래픽 검사</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ================= COMMON NETWORK FIGURE ================= -->
   <section>
     <div class="section-head">
-      <div class="section-kicker">04 · Common Network</div>
+      <div class="section-kicker">05 · Common Network</div>
       <h2>계열사 공통망 ↔ 계열사망 연결도</h2>
       <p class="section-desc">계열사망은 서로 직접 연결되지 않습니다. 모든 계열사망은 <b>그룹 공통망(Common Network Zone)</b> 하나만을 거쳐 본사·다른 계열사·인터넷과의 관계를 맺으며, 공통망의 라우팅 테이블 자체에 계열사 간 경로가 존재하지 않도록 구성합니다.</p>
     </div>
@@ -634,7 +737,7 @@
   <!-- ================= TERM MAPPING TABLE ================= -->
   <section>
     <div class="section-head">
-      <div class="section-kicker">05 · Terminology</div>
+      <div class="section-kicker">06 · Terminology</div>
       <h2>AWS ↔ Azure 명칭 비교표</h2>
       <p class="section-desc">위 구성도에서 같은 줄에 배치된 요소들의 정식 서비스명입니다. 제안서·심사 대응 문서 작성 시 그대로 인용할 수 있습니다.</p>
     </div>
@@ -677,7 +780,7 @@
   <!-- ================= ACCESS CONTROL FIGURE ================= -->
   <section>
     <div class="section-head">
-      <div class="section-kicker">06 · Access Control</div>
+      <div class="section-kicker">07 · Access Control</div>
       <h2>접근 통제 방안</h2>
       <p class="section-desc">관리자·운영자는 어떤 경우에도 서버·DB에 직접 접속할 수 없습니다. 반드시 망분리 전용단말 → 그룹 공통 Bastion → 대상 서버 순서를 거치며, DB는 별도로 DAM(DB 접근통제)을 한 번 더 경유합니다.</p>
     </div>
@@ -751,10 +854,87 @@
     </figure>
   </section>
 
+  <!-- ================= JIT ACCESS FLOW ================= -->
+  <section>
+    <div class="section-head">
+      <div class="section-kicker">08 · JIT Access</div>
+      <h2>Just-In-Time(JIT) 접근 상세 흐름</h2>
+      <p class="section-desc">앞의 접근통제 방안을 실제 운영 절차로 구체화한 것입니다. 평시에는 서버로 가는 경로 자체가 존재하지 않고, 인증·승인·시간제한 조건을 모두 충족했을 때만 정해진 시간 동안 접근이 열립니다.</p>
+    </div>
+
+    <div class="jit-banner">
+      <span class="deny">🚫 기본 상태 — VM/서버 직접 접근 불가</span>
+      <span style="color:var(--ink-faint)">→</span>
+      <span class="allow">✅ 인증·승인·시간제한 충족 시에만 — Time-bound 접근 허용</span>
+    </div>
+
+    <div class="section-head" style="margin-bottom:10px;">
+      <h2 style="font-size:16px;">AWS — JIT 접근 흐름</h2>
+    </div>
+    <div class="table-scroll" style="box-shadow:var(--shadow); padding:18px; overflow-x:auto;">
+      <div class="jit-row" style="min-width:1080px;">
+        <div class="jit-step">
+          <div class="jit-step-num" style="color:var(--aws)">1 · 인증(Authentication)</div>
+          <div class="jit-step-title">IAM Identity Center</div>
+          <div class="jit-step-body">사용자가 SSO로 로그인하면 <b>조건부 접근 정책</b>(디바이스·위치·MFA)을 평가합니다. 조건을 만족하지 못하면 이후 단계로 진행되지 않습니다.</div>
+        </div>
+        <div class="jit-arrow-col">→</div>
+        <div class="jit-step approve">
+          <div class="jit-step-num" style="color:var(--enc)">2 · 권한 승격(Authorization JIT)</div>
+          <div class="jit-step-title">PAM 승인 + STS AssumeRole</div>
+          <div class="jit-step-body">사용자가 PAM 콘솔에서 대상·사유·기간을 지정해 임시 권한을 요청하면 <b>승인자(관리자)</b>가 승인합니다. 승인 시 <b>시간제한 세션</b>(예: 1시간)의 IAM Role만 발급됩니다.</div>
+        </div>
+        <div class="jit-arrow-col">→</div>
+        <div class="jit-step">
+          <div class="jit-step-num" style="color:var(--aws)">3 · 네트워크 접근(Network Access JIT)</div>
+          <div class="jit-step-title">Systems Manager Automation</div>
+          <div class="jit-step-body">승인된 요청 시점에만 자동화가 <b>Security Group에 사용자 출발지 IP를 임시 등록</b>합니다. 세션 만료 시 규칙이 자동으로 회수됩니다.</div>
+        </div>
+        <div class="jit-arrow-col">→</div>
+        <div class="jit-step">
+          <div class="jit-step-num" style="color:var(--sec)">4 · 서버 접근(Access)</div>
+          <div class="jit-step-title">Session Manager → WAS/Web Subnet</div>
+          <div class="jit-step-body">Session Manager로 대상 EC2에 접속합니다. SSH/RDP 포트는 노출되지 않으며, 세션·명령 이력이 전부 로그로 남습니다. DB는 별도로 DAM을 경유합니다.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-head" style="margin:26px 0 10px;">
+      <h2 style="font-size:16px;">Azure — JIT 접근 흐름</h2>
+    </div>
+    <div class="table-scroll" style="box-shadow:var(--shadow); padding:18px; overflow-x:auto;">
+      <div class="jit-row" style="min-width:1080px;">
+        <div class="jit-step">
+          <div class="jit-step-num" style="color:var(--azure)">1 · 인증(Authentication)</div>
+          <div class="jit-step-title">Conditional Access(Entra ID)</div>
+          <div class="jit-step-body">사용자가 로그인하면 <b>조건부 액세스 정책</b>이 트리거되어 디바이스·위치·MFA 조건을 평가합니다. 조건을 만족해야만 Azure Portal 접근이 허용됩니다.</div>
+        </div>
+        <div class="jit-arrow-col">→</div>
+        <div class="jit-step approve">
+          <div class="jit-step-num" style="color:var(--enc)">2 · 권한 승격(Authorization JIT)</div>
+          <div class="jit-step-title">PIM 승인 + MFA</div>
+          <div class="jit-step-body">사용자가 Azure Bastion Role 등 임시 권한을 요청하면 <b>승인자(관리자)</b>가 요청을 검토하고, <b>다중인증(MFA)</b> 재확인 후 <b>시간제한 RBAC 역할</b>을 동일 사용자 ID에 임시 할당합니다.</div>
+        </div>
+        <div class="jit-arrow-col">→</div>
+        <div class="jit-step">
+          <div class="jit-step-num" style="color:var(--azure)">3 · 네트워크 접근(Network Access JIT)</div>
+          <div class="jit-step-title">Defender for Cloud — JIT VM Access</div>
+          <div class="jit-step-body">사용자가 JIT VM 접근을 요청하면 Defender for Cloud가 <b>허용된 출발지 IP에 한해 지정 포트(3389/22 등)를 임시로 개방</b>합니다. 지정 시간이 지나면 자동으로 닫힙니다.</div>
+        </div>
+        <div class="jit-arrow-col">→</div>
+        <div class="jit-step">
+          <div class="jit-step-num" style="color:var(--sec)">4 · VM 접근(Access VM)</div>
+          <div class="jit-step-title">Azure Bastion → Workload Subnet</div>
+          <div class="jit-step-body">Azure Bastion(사용자 IP만 허용)을 거쳐 Workload Subnet의 VM 또는 NIC 수준 NSG가 <b>임시로 RDP/SSH를 허용</b>합니다. 시간 만료 시 NSG 규칙이 자동으로 원복됩니다.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ================= SECURITY APPLIANCE TABLE ================= -->
   <section>
     <div class="section-head">
-      <div class="section-kicker">07 · Personal Credit Information</div>
+      <div class="section-kicker">09 · Personal Credit Information</div>
       <h2>개인신용정보 보호를 위한 보안장비 배치</h2>
       <p class="section-desc">개인신용정보를 처리하는 시스템이므로 아래 보안 기능을 전 구간에 배치합니다. AWS·Azure 모두 동일한 배치 기준을 적용합니다.</p>
     </div>
@@ -783,7 +963,7 @@
   <!-- ================= NETWORK SEGMENTATION NOTE ================= -->
   <section>
     <div class="section-head">
-      <div class="section-kicker">08 · Network Segmentation</div>
+      <div class="section-kicker">10 · Network Segmentation</div>
       <h2>통신 구간 분리 원칙</h2>
     </div>
     <div class="criteria-grid">
@@ -809,7 +989,7 @@
   <!-- ================= SECURITY ZONE OPERATIONS ================= -->
   <section>
     <div class="section-head">
-      <div class="section-kicker">09 · Zone Operations</div>
+      <div class="section-kicker">11 · Zone Operations</div>
       <h2>보안 Zone 운영 방안</h2>
       <p class="section-desc">Zone은 그리는 것으로 끝나지 않습니다. Zone마다 등급(Tier)·운영주체·승인권자·점검주기를 명확히 정해야 실제로 유지됩니다. 아래는 이 구성도의 Zone에 적용하는 운영 기준입니다.</p>
     </div>
@@ -871,7 +1051,7 @@
   <!-- ================= COMPLIANCE ================= -->
   <section>
     <div class="section-head">
-      <div class="section-kicker">10 · Compliance</div>
+      <div class="section-kicker">12 · Compliance</div>
       <h2>금융보안원 가이드라인 · 자체 위험평가(CSA) 준수</h2>
       <p class="section-desc">이 구성도는 「금융분야 클라우드컴퓨팅서비스 이용 가이드」(금융보안원), 전자금융감독규정, 「신용정보의 이용 및 보호에 관한 법률」의 요구를 반영하는 것을 전제로 하며, 실제 이용 전 아래 절차를 순서대로 거쳐야 합니다.</p>
     </div>
@@ -913,6 +1093,30 @@
           <tr><td class="cat">침해사고 대응</td><td class="role">탐지~통보~복구 절차 및 목표시간(SLA)</td><td class="role">공통망 SOC(SIEM 통합) + 보안관제 Tier 0 운영 체계</td></tr>
           <tr><td class="cat">클라우드 종료(Exit)</td><td class="role">계약 종료·이관 시 데이터 반환·완전삭제 절차</td><td class="role">계약서상 데이터반환권·삭제증적 확보 필요 — <b style="color:var(--sec)">별도 계약조항으로 확정할 것</b></td></tr>
           <tr><td class="cat">가용성</td><td class="role">CSP의 재해복구·이중화 보장 수준</td><td class="role">Multi-AZ / 가용성 영역(AZ) 이중화 전 계정 적용</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-head" style="margin-top:32px;">
+      <h2 style="font-size:17px;">법령별 안전성 확보조치 이행 현황</h2>
+      <p class="section-desc">「개인정보보호법」·「신용정보의 이용 및 보호에 관한 법률」·「전자금융거래법」이 요구하는 기술적·관리적·물리적 보호조치를 이 아키텍처의 어떤 구성요소가 충족하는지 정리했습니다.</p>
+    </div>
+    <div class="table-scroll">
+      <table class="cmp">
+        <caption>안전성 확보조치(기술적·관리적·물리적) · 관련 법령 대응표</caption>
+        <thead>
+          <tr><th>구분</th><th>조치 항목</th><th>관련 법령·기준</th><th>이 구성도의 반영</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="cat" rowspan="4" style="vertical-align:middle">기술적<br>보호조치</td><td class="role">접근권한의 관리(계정별 권한 부여·회수)</td><td class="role">개인정보보호법 시행령 §30, 신용정보업감독규정</td><td class="role">IAM Role/RBAC 최소권한 + JIT 승인(08 JIT 접근 흐름)</td></tr>
+          <tr><td class="role">접근통제(비인가자 접근 제한)</td><td class="role">개인정보보호법 §29, 전자금융감독규정</td><td class="role">PAM+Bastion 경유, 관리 Subnet 격리, WAF/방화벽</td></tr>
+          <tr><td class="role">고유식별정보 등 암호화</td><td class="role">개인정보보호법 §24·§29</td><td class="role">DB 암호화(KMS/Key Vault, 회사별 전용키), 전송구간 TLS</td></tr>
+          <tr><td class="role">접속기록의 보관 및 위·변조 방지</td><td class="role">개인정보보호법 시행령 §30, 전자금융감독규정</td><td class="role">공통망 SIEM 통합 수집 + 불변 스토리지 2년 이상 보존</td></tr>
+          <tr><td class="cat" rowspan="3" style="vertical-align:middle">관리적<br>보호조치</td><td class="role">내부 관리계획 수립·시행</td><td class="role">개인정보보호법 §29</td><td class="role">그룹 정보보호위원회 심의(10 Compliance 사전절차 1)</td></tr>
+          <tr><td class="role">정기적 자체 점검</td><td class="role">신용정보업감독규정, 전자금융감독규정</td><td class="role">자체 위험평가(CSA) 연 1회 이상 + 취약점 점검</td></tr>
+          <tr><td class="role">수탁자(위탁업체) 관리·감독</td><td class="role">개인정보보호법 §26, 신용정보법</td><td class="role">CSP 계약서 감사권·재위탁 통제 조항(사후관리 2)</td></tr>
+          <tr><td class="cat" rowspan="2" style="vertical-align:middle">물리적<br>보호조치</td><td class="role">전산실·데이터센터 물리적 접근 통제</td><td class="role">개인정보보호법 시행령 §30</td><td class="role">CSP 공동책임모델상 CSP 소관 — 계약서에 물리보안 수준(CSAP 등) 명시</td></tr>
+          <tr><td class="role">재해복구 및 이중화 체계</td><td class="role">전자금융감독규정(안전성 확보의무)</td><td class="role">Multi-AZ/가용성 영역 이중화 + Cross-Region 백업(04 상세 네트워크)</td></tr>
         </tbody>
       </table>
     </div>

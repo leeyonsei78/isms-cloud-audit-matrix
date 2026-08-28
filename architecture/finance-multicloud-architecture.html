@@ -275,6 +275,11 @@
   .jit-step-body { font-size: 11.3px; color: var(--ink-muted); line-height: 1.55; }
   .jit-step-body b { color: var(--ink); font-weight: 600; }
 
+  /* ---------- AWS/Azure service icon badges ---------- */
+  .svc-icon { display: inline-block; vertical-align: -4px; margin-right: 5px; flex: none; border-radius: 5px; }
+  .svc-icon use { color: #fff; }
+  .term-icons-row td.aws-cell, .term-icons-row td.azure-cell { white-space: nowrap; }
+
   /* ---------- comparison table ---------- */
   .table-scroll { overflow-x: auto; margin-top: 20px; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
   table.cmp { border-collapse: collapse; width: 100%; min-width: 880px; background: var(--surface); font-size: 13px; }
@@ -302,6 +307,26 @@
   }
 </style>
 
+<svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+  <defs>
+    <symbol id="i-isolate" viewBox="0 0 24 24"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="i-governance" viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 9h6M9 12h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M9.5 16l1.5 1.5 3-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-network" viewBox="0 0 24 24"><circle cx="12" cy="6" r="2.1" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="6" cy="17" r="2.1" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="18" cy="17" r="2.1" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.5 7.8L7.3 15.2M13.5 7.8l3.2 7.4M8.4 17h7.2" stroke="currentColor" stroke-width="1.4"/></symbol>
+    <symbol id="i-compute" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="6" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="5" y="13" width="14" height="6" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="8" cy="8" r=".9" fill="currentColor"/><circle cx="8" cy="16" r=".9" fill="currentColor"/></symbol>
+    <symbol id="i-lb" viewBox="0 0 24 24"><path d="M6 6v4c0 1 .5 1.6 1.6 2l3.4 1.4M18 6v4c0 1-.5 1.6-1.6 2l-3.4 1.4M12 13.4V19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="5" r="1.4" fill="currentColor"/><circle cx="18" cy="5" r="1.4" fill="currentColor"/><circle cx="12" cy="20" r="1.4" fill="currentColor"/></symbol>
+    <symbol id="i-sg" viewBox="0 0 24 24"><path d="M12 4l6.5 2.6v5.1c0 4.2-2.7 7.3-6.5 8.3-3.8-1-6.5-4.1-6.5-8.3V6.6L12 4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9.3 12.2l1.9 1.9 3.6-3.9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M9 3v4M15 3v4M7 7h10v3a5 5 0 0 1-5 5 5 5 0 0 1-5-5V7z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 15v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-hub" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="4.5" r="1.4" fill="currentColor"/><circle cx="12" cy="19.5" r="1.4" fill="currentColor"/><circle cx="4.5" cy="12" r="1.4" fill="currentColor"/><circle cx="19.5" cy="12" r="1.4" fill="currentColor"/><path d="M12 6.3v3.7M12 14v3.7M6.3 12h3.7M14 12h3.7" stroke="currentColor" stroke-width="1.4"/></symbol>
+    <symbol id="i-identity" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5.5 20c1-3.6 4-5.6 6.5-5.6s5.5 2 6.5 5.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-terminal" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 9.5l3 2.5-3 2.5M12.5 14.5h4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 4l6.5 2.6v5.1c0 4.2-2.7 7.3-6.5 8.3-3.8-1-6.5-4.1-6.5-8.3V6.6L12 4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 8.5v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="15" r=".9" fill="currentColor"/></symbol>
+    <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="6.5" rx="7" ry="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5 6.5v11c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6v-11" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5 12c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15.5" r="3.3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.3 13.2L19 4.5M16 7.5l2 2M13.2 10.3l2 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-scan" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M15 15l5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-bucket" viewBox="0 0 24 24"><path d="M5 6h14l-1.4 13.2a1.5 1.5 0 0 1-1.5 1.3H7.9a1.5 1.5 0 0 1-1.5-1.3L5 6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M4 6h16M8.5 6l.6-2.2A1.2 1.2 0 0 1 10.3 3h3.4a1.2 1.2 0 0 1 1.2.8L15.5 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="i-backup" viewBox="0 0 24 24"><path d="M7 15.5a4.5 4.5 0 0 1 .8-8.9 5.5 5.5 0 0 1 10.6 1.6A4 4 0 0 1 18 16H8.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 13v6M9.3 16.5l2.7 2.7 2.7-2.7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>
 <header class="top">
   <div class="top-inner">
     <div class="eyebrow">Financial Holdings · AWS + Azure Multi-Cloud</div>
@@ -470,21 +495,21 @@
             <div class="item-row"><span class="pill co-a">VPC 10.10.0.0/16</span><span class="pill">Multi-AZ 이중화</span><span class="pill">전용 VIF(Virtual Interface) A</span></div>
             <div class="zone-stack">
               <div class="zone-row">
-                <div class="zhead"><span class="zone-label">Web Zone(Subnet)</span><span class="zone-svc">ALB(내부) + EC2 웹서버</span></div>
+                <div class="zhead"><span class="zone-label"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-lb"/></svg>Web Zone(Subnet)</span><span class="zone-svc">ALB(내부) + EC2 웹서버</span></div>
                 <div class="item-row"><span class="pill sec">AWS WAF</span><span class="pill sec">Security Group</span><span class="pill sec">Network Firewall(IPS)</span></div>
               </div>
               <div class="zone-arrow">↓ 이 계층만 통과 (계층 건너뛰기 차단)</div>
               <div class="zone-row">
-                <div class="zhead"><span class="zone-label">WAS Zone(Subnet)</span><span class="zone-svc">EC2 / ECS 애플리케이션 서버</span></div>
+                <div class="zhead"><span class="zone-label"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-compute"/></svg>WAS Zone(Subnet)</span><span class="zone-svc">EC2 / ECS 애플리케이션 서버</span></div>
                 <div class="item-row"><span class="pill sec">Session Manager(서버접근통제)</span><span class="pill sec">백신 Agent</span><span class="pill sec">DAM Agent(쿼리 감사)</span></div>
               </div>
               <div class="zone-arrow">↓</div>
               <div class="zone-row db">
-                <div class="zhead"><span class="zone-label">DB Zone(Subnet) · 개인신용정보</span><span class="zone-svc">Amazon Aurora / RDS(회사 A 전용 인스턴스)</span></div>
+                <div class="zhead"><span class="zone-label"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-db"/></svg>DB Zone(Subnet) · 개인신용정보</span><span class="zone-svc">Amazon Aurora / RDS(회사 A 전용 인스턴스)</span></div>
                 <div class="item-row"><span class="pill enc">KMS CMK — A사 전용키</span><span class="pill sec">DAM(DB 접근통제)</span><span class="pill sec">컬럼 암호화</span></div>
               </div>
               <div class="zone-row">
-                <div class="zhead"><span class="zone-label">관리 Zone(Subnet)</span><span class="zone-svc">Bastion 연동 · 로그 Agent · Systems Manager</span></div>
+                <div class="zhead"><span class="zone-label"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-terminal"/></svg>관리 Zone(Subnet)</span><span class="zone-svc">Bastion 연동 · 로그 Agent · Systems Manager</span></div>
                 <div class="item-row"><span class="pill sec">PAM 연동</span><span class="pill sec">CloudWatch Agent</span><span class="pill sec">S3(로그·백업 저장)</span></div>
               </div>
             </div>
@@ -498,21 +523,21 @@
             <div class="item-row"><span class="pill co-a">VNet 10.20.0.0/16</span><span class="pill">가용성 영역 이중화</span><span class="pill">전용 ExpressRoute Circuit A</span></div>
             <div class="zone-stack">
               <div class="zone-row">
-                <div class="zhead"><span class="zone-label">Web Zone(Subnet)</span><span class="zone-svc">Application Gateway(내부) + VM 웹서버</span></div>
+                <div class="zhead"><span class="zone-label"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-lb"/></svg>Web Zone(Subnet)</span><span class="zone-svc">Application Gateway(내부) + VM 웹서버</span></div>
                 <div class="item-row"><span class="pill sec">Azure WAF</span><span class="pill sec">NSG</span><span class="pill sec">Azure Firewall(IPS)</span></div>
               </div>
               <div class="zone-arrow">↓ 이 계층만 통과 (계층 건너뛰기 차단)</div>
               <div class="zone-row">
-                <div class="zhead"><span class="zone-label">WAS Zone(Subnet)</span><span class="zone-svc">VM / App Service 애플리케이션 서버</span></div>
+                <div class="zhead"><span class="zone-label"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-compute"/></svg>WAS Zone(Subnet)</span><span class="zone-svc">VM / App Service 애플리케이션 서버</span></div>
                 <div class="item-row"><span class="pill sec">Azure Bastion(서버접근통제)</span><span class="pill sec">백신 Agent</span><span class="pill sec">DAM Agent(쿼리 감사)</span></div>
               </div>
               <div class="zone-arrow">↓</div>
               <div class="zone-row db">
-                <div class="zhead"><span class="zone-label">DB Zone(Subnet) · 개인신용정보</span><span class="zone-svc">Azure SQL Managed Instance(회사 A 전용 인스턴스)</span></div>
+                <div class="zhead"><span class="zone-label"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-db"/></svg>DB Zone(Subnet) · 개인신용정보</span><span class="zone-svc">Azure SQL Managed Instance(회사 A 전용 인스턴스)</span></div>
                 <div class="item-row"><span class="pill enc">Key Vault Key — A사 전용키</span><span class="pill sec">DAM(DB 접근통제)</span><span class="pill sec">Always Encrypted</span></div>
               </div>
               <div class="zone-row">
-                <div class="zhead"><span class="zone-label">관리 Zone(Subnet)</span><span class="zone-svc">Bastion 연동 · 로그 Agent · Update Manager</span></div>
+                <div class="zhead"><span class="zone-label"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-terminal"/></svg>관리 Zone(Subnet)</span><span class="zone-svc">Bastion 연동 · 로그 Agent · Update Manager</span></div>
                 <div class="item-row"><span class="pill sec">PAM 연동</span><span class="pill sec">Azure Monitor Agent</span><span class="pill sec">Blob Storage(로그·백업 저장)</span></div>
               </div>
             </div>
@@ -599,18 +624,18 @@
             <div class="net-az-row">
               <div class="net-az">
                 <div class="net-az-label">Availability Zone A</div>
-                <div class="net-subnet web"><span class="cidr">Web Subnet · 10.10.1.0/24</span><span class="svc">EC2(웹서버) + ALB</span></div>
-                <div class="net-subnet was"><span class="cidr">WAS Subnet · 10.10.2.0/24</span><span class="svc">EC2(WAS) · ETL/배치 서버 · 모니터링 EC2</span></div>
-                <div class="net-subnet db"><span class="cidr">DB Subnet · 10.10.3.0/24</span><span class="svc">Amazon Aurora/RDS(Primary) · 개인신용정보</span></div>
+                <div class="net-subnet web"><span class="cidr"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-lb"/></svg>Web Subnet · 10.10.1.0/24</span><span class="svc">EC2(웹서버) + ALB</span></div>
+                <div class="net-subnet was"><span class="cidr"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-compute"/></svg>WAS Subnet · 10.10.2.0/24</span><span class="svc">EC2(WAS) · ETL/배치 서버 · 모니터링 EC2</span></div>
+                <div class="net-subnet db"><span class="cidr"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-db"/></svg>DB Subnet · 10.10.3.0/24</span><span class="svc">Amazon Aurora/RDS(Primary) · 개인신용정보</span></div>
               </div>
               <div class="net-az">
                 <div class="net-az-label">Availability Zone B</div>
-                <div class="net-subnet web"><span class="cidr">Web Subnet · 10.10.11.0/24</span><span class="svc">EC2(웹서버) + ALB</span></div>
-                <div class="net-subnet was"><span class="cidr">WAS Subnet · 10.10.12.0/24</span><span class="svc">EC2(WAS) · ETL/배치 서버 · 모니터링 EC2</span></div>
-                <div class="net-subnet db"><span class="cidr">DB Subnet · 10.10.13.0/24</span><span class="svc">Amazon Aurora/RDS(Standby) · 개인신용정보</span></div>
+                <div class="net-subnet web"><span class="cidr"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-lb"/></svg>Web Subnet · 10.10.11.0/24</span><span class="svc">EC2(웹서버) + ALB</span></div>
+                <div class="net-subnet was"><span class="cidr"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-compute"/></svg>WAS Subnet · 10.10.12.0/24</span><span class="svc">EC2(WAS) · ETL/배치 서버 · 모니터링 EC2</span></div>
+                <div class="net-subnet db"><span class="cidr"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-db"/></svg>DB Subnet · 10.10.13.0/24</span><span class="svc">Amazon Aurora/RDS(Standby) · 개인신용정보</span></div>
               </div>
             </div>
-            <div class="net-mgmt">관리 Subnet · 10.10.4.0/24 — <b>NAT Gateway</b>(패치·업데이트용 아웃바운드, 전용회선 내부 리포지토리 경유·인터넷 미경유) · Bastion 연동 · 패치서버 · S3(로그·백업)</div>
+            <div class="net-mgmt"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-terminal"/></svg>관리 Subnet · 10.10.4.0/24 — <b>NAT Gateway</b>(패치·업데이트용 아웃바운드, 전용회선 내부 리포지토리 경유·인터넷 미경유) · Bastion 연동 · 패치서버 · S3(로그·백업)</div>
           </div>
           <div class="net-boundary-row"><span class="net-boundary">경계: Network Firewall(IPS/IDS) — 전용회선 진입점에 인라인 배치, 전 트래픽 검사</span></div>
         </div>
@@ -627,18 +652,18 @@
             <div class="net-az-row">
               <div class="net-az">
                 <div class="net-az-label">가용성 영역(Zone) 1</div>
-                <div class="net-subnet web"><span class="cidr">Web Subnet · 10.20.1.0/24</span><span class="svc">VM(웹서버) + Application Gateway</span></div>
-                <div class="net-subnet was"><span class="cidr">WAS Subnet · 10.20.2.0/24</span><span class="svc">VM(WAS) · ETL/배치 서버 · 모니터링 VM</span></div>
-                <div class="net-subnet db"><span class="cidr">DB Subnet · 10.20.3.0/24</span><span class="svc">Azure SQL Managed Instance(Primary) · 개인신용정보</span></div>
+                <div class="net-subnet web"><span class="cidr"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-lb"/></svg>Web Subnet · 10.20.1.0/24</span><span class="svc">VM(웹서버) + Application Gateway</span></div>
+                <div class="net-subnet was"><span class="cidr"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-compute"/></svg>WAS Subnet · 10.20.2.0/24</span><span class="svc">VM(WAS) · ETL/배치 서버 · 모니터링 VM</span></div>
+                <div class="net-subnet db"><span class="cidr"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-db"/></svg>DB Subnet · 10.20.3.0/24</span><span class="svc">Azure SQL Managed Instance(Primary) · 개인신용정보</span></div>
               </div>
               <div class="net-az">
                 <div class="net-az-label">가용성 영역(Zone) 2</div>
-                <div class="net-subnet web"><span class="cidr">Web Subnet · 10.20.11.0/24</span><span class="svc">VM(웹서버) + Application Gateway</span></div>
-                <div class="net-subnet was"><span class="cidr">WAS Subnet · 10.20.12.0/24</span><span class="svc">VM(WAS) · ETL/배치 서버 · 모니터링 VM</span></div>
-                <div class="net-subnet db"><span class="cidr">DB Subnet · 10.20.13.0/24</span><span class="svc">Azure SQL Managed Instance(Secondary) · 개인신용정보</span></div>
+                <div class="net-subnet web"><span class="cidr"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-lb"/></svg>Web Subnet · 10.20.11.0/24</span><span class="svc">VM(웹서버) + Application Gateway</span></div>
+                <div class="net-subnet was"><span class="cidr"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-compute"/></svg>WAS Subnet · 10.20.12.0/24</span><span class="svc">VM(WAS) · ETL/배치 서버 · 모니터링 VM</span></div>
+                <div class="net-subnet db"><span class="cidr"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-db"/></svg>DB Subnet · 10.20.13.0/24</span><span class="svc">Azure SQL Managed Instance(Secondary) · 개인신용정보</span></div>
               </div>
             </div>
-            <div class="net-mgmt">관리 Subnet · 10.20.4.0/24 — <b>NAT Gateway</b>(패치·업데이트용 아웃바운드, 전용회선 내부 리포지토리 경유·인터넷 미경유) · Bastion 연동 · 패치서버(Update Manager) · Blob Storage(로그·백업)</div>
+            <div class="net-mgmt"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-terminal"/></svg>관리 Subnet · 10.20.4.0/24 — <b>NAT Gateway</b>(패치·업데이트용 아웃바운드, 전용회선 내부 리포지토리 경유·인터넷 미경유) · Bastion 연동 · 패치서버(Update Manager) · Blob Storage(로그·백업)</div>
           </div>
           <div class="net-boundary-row"><span class="net-boundary">경계: Azure Firewall(IPS/IDS) — 전용회선 진입점에 인라인 배치, 전 트래픽 검사</span></div>
         </div>
@@ -748,30 +773,30 @@
           <tr><th>구분</th><th>AWS 명칭</th><th>Azure 명칭</th><th>이 구성도에서의 역할</th></tr>
         </thead>
         <tbody>
-          <tr><td class="cat">최상위 격리</td><td class="aws-cell">Account</td><td class="azure-cell">Subscription</td><td class="role">회사·환경별 최상위 격리 단위(과금·권한 분리)</td></tr>
-          <tr><td class="cat">그룹 거버넌스</td><td class="aws-cell">Organizations + SCP</td><td class="azure-cell">Management Group + Azure Policy</td><td class="role">계열사 전체에 폐쇄망·태깅 등 가드레일 강제 배포</td></tr>
-          <tr><td class="cat">가상 네트워크</td><td class="aws-cell">VPC</td><td class="azure-cell">VNet</td><td class="role">회사별 네트워크 격리 단위</td></tr>
-          <tr><td class="cat">네트워크 Zone</td><td class="aws-cell">Subnet</td><td class="azure-cell">Subnet</td><td class="role">Web / WAS / DB / 관리 계층 분리</td></tr>
-          <tr><td class="cat">컴퓨팅 인스턴스</td><td class="aws-cell">EC2</td><td class="azure-cell">Virtual Machine(VM)</td><td class="role">Web·WAS Zone의 서버 컴퓨팅 자원</td></tr>
-          <tr><td class="cat">로드밸런서</td><td class="aws-cell">ALB(Application Load Balancer)</td><td class="azure-cell">Application Gateway</td><td class="role">Web Zone 내부 트래픽 분산</td></tr>
-          <tr><td class="cat">인스턴스 방화벽</td><td class="aws-cell">Security Group</td><td class="azure-cell">NSG(Network Security Group)</td><td class="role">서버 단위 최소권한 통신 규칙</td></tr>
-          <tr><td class="cat">전용회선</td><td class="aws-cell">Direct Connect</td><td class="azure-cell">ExpressRoute</td><td class="role">그룹 데이터센터 ↔ 클라우드 폐쇄 연결(인터넷 미경유)</td></tr>
-          <tr><td class="cat">사내망 허브</td><td class="aws-cell">Transit Gateway</td><td class="azure-cell">Virtual WAN Hub</td><td class="role">계열사별 VPC/VNet을 하나의 허브로 집중 연결, 상호 라우팅 통제</td></tr>
-          <tr><td class="cat">통합 인증(SSO)</td><td class="aws-cell">IAM Identity Center</td><td class="azure-cell">Microsoft Entra ID</td><td class="role">계열사 공통 계정·SSO 통합관리</td></tr>
-          <tr><td class="cat">접근 권한</td><td class="aws-cell">IAM Role / Policy</td><td class="azure-cell">Azure RBAC</td><td class="role">최소권한 원칙 적용</td></tr>
-          <tr><td class="cat">권한 임시승격</td><td class="aws-cell">IAM Roles Anywhere / STS</td><td class="azure-cell">Privileged Identity Management(PIM)</td><td class="role">특권 권한 Just-In-Time 승격</td></tr>
-          <tr><td class="cat">서버 원격접속</td><td class="aws-cell">Systems Manager Session Manager</td><td class="azure-cell">Azure Bastion</td><td class="role">SSH/RDP 직접 노출 없이 관리자 접속(접근통제 핵심)</td></tr>
-          <tr><td class="cat">웹방화벽</td><td class="aws-cell">AWS WAF</td><td class="azure-cell">Azure WAF(Application Gateway)</td><td class="role">웹 공격(SQLi/XSS 등) 차단</td></tr>
-          <tr><td class="cat">경계 방화벽/IPS</td><td class="aws-cell">Network Firewall</td><td class="azure-cell">Azure Firewall</td><td class="role">Hub 진입점의 통합 침입탐지·차단</td></tr>
-          <tr><td class="cat">위협 탐지</td><td class="aws-cell">GuardDuty</td><td class="azure-cell">Microsoft Defender for Cloud</td><td class="role">이상행위·악성코드·계정탈취 탐지</td></tr>
-          <tr><td class="cat">통합 로그/SIEM</td><td class="aws-cell">CloudTrail + Security Hub</td><td class="azure-cell">Azure Monitor + Microsoft Sentinel</td><td class="role">계열사 공통 SOC로 통합 수집·상관분석</td></tr>
-          <tr><td class="cat">데이터베이스</td><td class="aws-cell">Amazon Aurora / RDS</td><td class="azure-cell">Azure SQL Managed Instance</td><td class="role">회사·환경별 전용 DB 인스턴스</td></tr>
-          <tr><td class="cat">DB 암호화 키</td><td class="aws-cell">KMS(Customer Managed Key)</td><td class="azure-cell">Key Vault(Key)</td><td class="role">회사별 별도 발급, 계열사 간 절대 미공유</td></tr>
-          <tr><td class="cat">비밀정보 관리</td><td class="aws-cell">Secrets Manager</td><td class="azure-cell">Key Vault(Secrets)</td><td class="role">DB 접속정보 등 자격증명 보관</td></tr>
-          <tr><td class="cat">개인정보 탐지</td><td class="aws-cell">Amazon Macie</td><td class="azure-cell">Microsoft Purview</td><td class="role">개인신용정보 소재 스캔·분류·DLP</td></tr>
-          <tr><td class="cat">오브젝트 스토리지</td><td class="aws-cell">S3</td><td class="azure-cell">Blob Storage</td><td class="role">로그·백업 저장(버전관리·불변 스토리지 적용)</td></tr>
-          <tr><td class="cat">백업</td><td class="aws-cell">AWS Backup</td><td class="azure-cell">Azure Backup(Recovery Services Vault)</td><td class="role">계열사 공통 백업 정책 관리</td></tr>
-          <tr><td class="cat">취약점 관리</td><td class="aws-cell">Inspector</td><td class="azure-cell">Defender for Cloud(취약점 평가)</td><td class="role">정기 취약점 점검 및 조치 추적</td></tr>
+          <tr><td class="cat">최상위 격리</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-isolate"/></svg>Account</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-isolate"/></svg>Subscription</td><td class="role">회사·환경별 최상위 격리 단위(과금·권한 분리)</td></tr>
+          <tr><td class="cat">그룹 거버넌스</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-governance"/></svg>Organizations + SCP</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-governance"/></svg>Management Group + Azure Policy</td><td class="role">계열사 전체에 폐쇄망·태깅 등 가드레일 강제 배포</td></tr>
+          <tr><td class="cat">가상 네트워크</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-network"/></svg>VPC</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-network"/></svg>VNet</td><td class="role">회사별 네트워크 격리 단위</td></tr>
+          <tr><td class="cat">네트워크 Zone</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-network"/></svg>Subnet</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-network"/></svg>Subnet</td><td class="role">Web / WAS / DB / 관리 계층 분리</td></tr>
+          <tr><td class="cat">컴퓨팅 인스턴스</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-compute"/></svg>EC2</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-compute"/></svg>Virtual Machine(VM)</td><td class="role">Web·WAS Zone의 서버 컴퓨팅 자원</td></tr>
+          <tr><td class="cat">로드밸런서</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-lb"/></svg>ALB(Application Load Balancer)</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-lb"/></svg>Application Gateway</td><td class="role">Web Zone 내부 트래픽 분산</td></tr>
+          <tr><td class="cat">인스턴스 방화벽</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-sg"/></svg>Security Group</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-sg"/></svg>NSG(Network Security Group)</td><td class="role">서버 단위 최소권한 통신 규칙</td></tr>
+          <tr><td class="cat">전용회선</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-link"/></svg>Direct Connect</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-link"/></svg>ExpressRoute</td><td class="role">그룹 데이터센터 ↔ 클라우드 폐쇄 연결(인터넷 미경유)</td></tr>
+          <tr><td class="cat">사내망 허브</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-hub"/></svg>Transit Gateway</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-hub"/></svg>Virtual WAN Hub</td><td class="role">계열사별 VPC/VNet을 하나의 허브로 집중 연결, 상호 라우팅 통제</td></tr>
+          <tr><td class="cat">통합 인증(SSO)</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-identity"/></svg>IAM Identity Center</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-identity"/></svg>Microsoft Entra ID</td><td class="role">계열사 공통 계정·SSO 통합관리</td></tr>
+          <tr><td class="cat">접근 권한</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-identity"/></svg>IAM Role / Policy</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-identity"/></svg>Azure RBAC</td><td class="role">최소권한 원칙 적용</td></tr>
+          <tr><td class="cat">권한 임시승격</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-key"/></svg>IAM Roles Anywhere / STS</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-key"/></svg>Privileged Identity Management(PIM)</td><td class="role">특권 권한 Just-In-Time 승격</td></tr>
+          <tr><td class="cat">서버 원격접속</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-terminal"/></svg>Systems Manager Session Manager</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-terminal"/></svg>Azure Bastion</td><td class="role">SSH/RDP 직접 노출 없이 관리자 접속(접근통제 핵심)</td></tr>
+          <tr><td class="cat">웹방화벽</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-shield"/></svg>AWS WAF</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-shield"/></svg>Azure WAF(Application Gateway)</td><td class="role">웹 공격(SQLi/XSS 등) 차단</td></tr>
+          <tr><td class="cat">경계 방화벽/IPS</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-shield"/></svg>Network Firewall</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-shield"/></svg>Azure Firewall</td><td class="role">Hub 진입점의 통합 침입탐지·차단</td></tr>
+          <tr><td class="cat">위협 탐지</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-shield"/></svg>GuardDuty</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-shield"/></svg>Microsoft Defender for Cloud</td><td class="role">이상행위·악성코드·계정탈취 탐지</td></tr>
+          <tr><td class="cat">통합 로그/SIEM</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-shield"/></svg>CloudTrail + Security Hub</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-shield"/></svg>Azure Monitor + Microsoft Sentinel</td><td class="role">계열사 공통 SOC로 통합 수집·상관분석</td></tr>
+          <tr><td class="cat">데이터베이스</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-db"/></svg>Amazon Aurora / RDS</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-db"/></svg>Azure SQL Managed Instance</td><td class="role">회사·환경별 전용 DB 인스턴스</td></tr>
+          <tr><td class="cat">DB 암호화 키</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-key"/></svg>KMS(Customer Managed Key)</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-key"/></svg>Key Vault(Key)</td><td class="role">회사별 별도 발급, 계열사 간 절대 미공유</td></tr>
+          <tr><td class="cat">비밀정보 관리</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-key"/></svg>Secrets Manager</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-key"/></svg>Key Vault(Secrets)</td><td class="role">DB 접속정보 등 자격증명 보관</td></tr>
+          <tr><td class="cat">개인정보 탐지</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-scan"/></svg>Amazon Macie</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-scan"/></svg>Microsoft Purview</td><td class="role">개인신용정보 소재 스캔·분류·DLP</td></tr>
+          <tr><td class="cat">오브젝트 스토리지</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-bucket"/></svg>S3</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-bucket"/></svg>Blob Storage</td><td class="role">로그·백업 저장(버전관리·불변 스토리지 적용)</td></tr>
+          <tr><td class="cat">백업</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-backup"/></svg>AWS Backup</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-backup"/></svg>Azure Backup(Recovery Services Vault)</td><td class="role">계열사 공통 백업 정책 관리</td></tr>
+          <tr><td class="cat">취약점 관리</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-scan"/></svg>Inspector</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-scan"/></svg>Defender for Cloud(취약점 평가)</td><td class="role">정기 취약점 점검 및 조치 추적</td></tr>
         </tbody>
       </table>
     </div>
@@ -875,25 +900,25 @@
       <div class="jit-row" style="min-width:1080px;">
         <div class="jit-step">
           <div class="jit-step-num" style="color:var(--aws)">1 · 인증(Authentication)</div>
-          <div class="jit-step-title">IAM Identity Center</div>
+          <div class="jit-step-title"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-identity"/></svg>IAM Identity Center</div>
           <div class="jit-step-body">사용자가 SSO로 로그인하면 <b>조건부 접근 정책</b>(디바이스·위치·MFA)을 평가합니다. 조건을 만족하지 못하면 이후 단계로 진행되지 않습니다.</div>
         </div>
         <div class="jit-arrow-col">→</div>
         <div class="jit-step approve">
           <div class="jit-step-num" style="color:var(--enc)">2 · 권한 승격(Authorization JIT)</div>
-          <div class="jit-step-title">PAM 승인 + STS AssumeRole</div>
+          <div class="jit-step-title"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-key"/></svg>PAM 승인 + STS AssumeRole</div>
           <div class="jit-step-body">사용자가 PAM 콘솔에서 대상·사유·기간을 지정해 임시 권한을 요청하면 <b>승인자(관리자)</b>가 승인합니다. 승인 시 <b>시간제한 세션</b>(예: 1시간)의 IAM Role만 발급됩니다.</div>
         </div>
         <div class="jit-arrow-col">→</div>
         <div class="jit-step">
           <div class="jit-step-num" style="color:var(--aws)">3 · 네트워크 접근(Network Access JIT)</div>
-          <div class="jit-step-title">Systems Manager Automation</div>
+          <div class="jit-step-title"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-network"/></svg>Systems Manager Automation</div>
           <div class="jit-step-body">승인된 요청 시점에만 자동화가 <b>Security Group에 사용자 출발지 IP를 임시 등록</b>합니다. 세션 만료 시 규칙이 자동으로 회수됩니다.</div>
         </div>
         <div class="jit-arrow-col">→</div>
         <div class="jit-step">
           <div class="jit-step-num" style="color:var(--sec)">4 · 서버 접근(Access)</div>
-          <div class="jit-step-title">Session Manager → WAS/Web Subnet</div>
+          <div class="jit-step-title"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-terminal"/></svg>Session Manager → WAS/Web Subnet</div>
           <div class="jit-step-body">Session Manager로 대상 EC2에 접속합니다. SSH/RDP 포트는 노출되지 않으며, 세션·명령 이력이 전부 로그로 남습니다. DB는 별도로 DAM을 경유합니다.</div>
         </div>
       </div>
@@ -906,25 +931,25 @@
       <div class="jit-row" style="min-width:1080px;">
         <div class="jit-step">
           <div class="jit-step-num" style="color:var(--azure)">1 · 인증(Authentication)</div>
-          <div class="jit-step-title">Conditional Access(Entra ID)</div>
+          <div class="jit-step-title"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-identity"/></svg>Conditional Access(Entra ID)</div>
           <div class="jit-step-body">사용자가 로그인하면 <b>조건부 액세스 정책</b>이 트리거되어 디바이스·위치·MFA 조건을 평가합니다. 조건을 만족해야만 Azure Portal 접근이 허용됩니다.</div>
         </div>
         <div class="jit-arrow-col">→</div>
         <div class="jit-step approve">
           <div class="jit-step-num" style="color:var(--enc)">2 · 권한 승격(Authorization JIT)</div>
-          <div class="jit-step-title">PIM 승인 + MFA</div>
+          <div class="jit-step-title"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-key"/></svg>PIM 승인 + MFA</div>
           <div class="jit-step-body">사용자가 Azure Bastion Role 등 임시 권한을 요청하면 <b>승인자(관리자)</b>가 요청을 검토하고, <b>다중인증(MFA)</b> 재확인 후 <b>시간제한 RBAC 역할</b>을 동일 사용자 ID에 임시 할당합니다.</div>
         </div>
         <div class="jit-arrow-col">→</div>
         <div class="jit-step">
           <div class="jit-step-num" style="color:var(--azure)">3 · 네트워크 접근(Network Access JIT)</div>
-          <div class="jit-step-title">Defender for Cloud — JIT VM Access</div>
+          <div class="jit-step-title"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-network"/></svg>Defender for Cloud — JIT VM Access</div>
           <div class="jit-step-body">사용자가 JIT VM 접근을 요청하면 Defender for Cloud가 <b>허용된 출발지 IP에 한해 지정 포트(3389/22 등)를 임시로 개방</b>합니다. 지정 시간이 지나면 자동으로 닫힙니다.</div>
         </div>
         <div class="jit-arrow-col">→</div>
         <div class="jit-step">
           <div class="jit-step-num" style="color:var(--sec)">4 · VM 접근(Access VM)</div>
-          <div class="jit-step-title">Azure Bastion → Workload Subnet</div>
+          <div class="jit-step-title"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-terminal"/></svg>Azure Bastion → Workload Subnet</div>
           <div class="jit-step-body">Azure Bastion(사용자 IP만 허용)을 거쳐 Workload Subnet의 VM 또는 NIC 수준 NSG가 <b>임시로 RDP/SSH를 허용</b>합니다. 시간 만료 시 NSG 규칙이 자동으로 원복됩니다.</div>
         </div>
       </div>
@@ -945,16 +970,16 @@
           <tr><th>배치 위치</th><th>보안 기능</th><th>AWS</th><th>Azure</th></tr>
         </thead>
         <tbody>
-          <tr><td class="cat">Hub(경계)</td><td class="role">침입방지·차단 방화벽(IPS/IDS)</td><td class="aws-cell">Network Firewall + GuardDuty</td><td class="azure-cell">Azure Firewall + Defender(NVA 연계)</td></tr>
-          <tr><td class="cat">Web Zone</td><td class="role">웹방화벽(WAF)</td><td class="aws-cell">AWS WAF</td><td class="azure-cell">Azure WAF(Application Gateway)</td></tr>
-          <tr><td class="cat">WAS Zone</td><td class="role">서버 접근통제 + 백신</td><td class="aws-cell">Session Manager + 3rd-party 백신 Agent</td><td class="azure-cell">Azure Bastion + 3rd-party 백신 Agent</td></tr>
-          <tr><td class="cat">DB Zone</td><td class="role">DB 암호화(저장데이터)</td><td class="aws-cell">KMS CMK(회사별) + 컬럼 암호화</td><td class="azure-cell">Key Vault Key(회사별) + Always Encrypted</td></tr>
+          <tr><td class="cat">Hub(경계)</td><td class="role">침입방지·차단 방화벽(IPS/IDS)</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-shield"/></svg>Network Firewall + GuardDuty</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-shield"/></svg>Azure Firewall + Defender(NVA 연계)</td></tr>
+          <tr><td class="cat">Web Zone</td><td class="role">웹방화벽(WAF)</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-shield"/></svg>AWS WAF</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-shield"/></svg>Azure WAF(Application Gateway)</td></tr>
+          <tr><td class="cat">WAS Zone</td><td class="role">서버 접근통제 + 백신</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-terminal"/></svg>Session Manager + 3rd-party 백신 Agent</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-terminal"/></svg>Azure Bastion + 3rd-party 백신 Agent</td></tr>
+          <tr><td class="cat">DB Zone</td><td class="role">DB 암호화(저장데이터)</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-key"/></svg>KMS CMK(회사별) + 컬럼 암호화</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-key"/></svg>Key Vault Key(회사별) + Always Encrypted</td></tr>
           <tr><td class="cat">DB Zone</td><td class="role">DB 접근통제(DAM)</td><td class="role" colspan="2" style="font-family:var(--font-mono);color:var(--shared)">3rd-party DAM 어플라이언스(예: Guardium/Imperva) — 양쪽 클라우드 공통 적용</td></tr>
-          <tr><td class="cat">전 구간</td><td class="role">개인정보 탐지 / DLP</td><td class="aws-cell">Amazon Macie</td><td class="azure-cell">Microsoft Purview</td></tr>
-          <tr><td class="cat">전 구간</td><td class="role">통합 로그 / SIEM</td><td class="aws-cell">CloudTrail + Security Hub</td><td class="azure-cell">Azure Monitor + Sentinel</td></tr>
+          <tr><td class="cat">전 구간</td><td class="role">개인정보 탐지 / DLP</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-scan"/></svg>Amazon Macie</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-scan"/></svg>Microsoft Purview</td></tr>
+          <tr><td class="cat">전 구간</td><td class="role">통합 로그 / SIEM</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-shield"/></svg>CloudTrail + Security Hub</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-shield"/></svg>Azure Monitor + Sentinel</td></tr>
           <tr><td class="cat">관리 Zone</td><td class="role">특권계정관리(PAM)</td><td class="role" colspan="2" style="font-family:var(--font-mono);color:var(--shared)">3rd-party PAM 솔루션 — 계열사 공통 1식 적용, 세션 녹화·체크아웃 방식</td></tr>
-          <tr><td class="cat">전 구간</td><td class="role">취약점 점검</td><td class="aws-cell">Inspector</td><td class="azure-cell">Defender for Cloud(취약점 평가)</td></tr>
-          <tr><td class="cat">전용회선 구간</td><td class="role">회선 구간 암호화</td><td class="aws-cell">Direct Connect + MACsec/IPSec</td><td class="azure-cell">ExpressRoute + MACsec/IPSec</td></tr>
+          <tr><td class="cat">전 구간</td><td class="role">취약점 점검</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-scan"/></svg>Inspector</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-scan"/></svg>Defender for Cloud(취약점 평가)</td></tr>
+          <tr><td class="cat">전용회선 구간</td><td class="role">회선 구간 암호화</td><td class="aws-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--aws)"/><use href="#i-link"/></svg>Direct Connect + MACsec/IPSec</td><td class="azure-cell"><svg class="svc-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect width="24" height="24" rx="6" fill="var(--azure)"/><use href="#i-link"/></svg>ExpressRoute + MACsec/IPSec</td></tr>
         </tbody>
       </table>
     </div>
